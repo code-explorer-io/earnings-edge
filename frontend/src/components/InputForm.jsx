@@ -2,16 +2,17 @@ import { useState } from 'react';
 import './InputForm.css';
 
 function InputForm({ onAnalyze, loading }) {
-  const [ticker, setTicker] = useState('SBUX');
-  const [wordsInput, setWordsInput] = useState('holiday, pumpkin, rewards, mobile');
+  const [ticker, setTicker] = useState('');
+  const [wordsInput, setWordsInput] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Parse words from comma-separated input
+    // Parse words from comma-separated input with whitespace normalization
     const words = wordsInput
       .split(',')
-      .map(word => word.trim())
+      .map(word => word.trim())                        // Remove leading/trailing whitespace
+      .map(word => word.replace(/\s+/g, ' '))          // Collapse multiple spaces into single space
       .filter(word => word.length > 0);
 
     if (words.length === 0) {
@@ -41,6 +42,9 @@ function InputForm({ onAnalyze, loading }) {
             disabled={loading}
             className="ticker-input"
           />
+          <small className="help-text">
+            Don't know the ticker? <a href="https://finance.yahoo.com/lookup" target="_blank" rel="noopener noreferrer" style={{ color: '#667eea', textDecoration: 'underline' }}>Search for company symbols here</a>
+          </small>
         </div>
 
         <div className="form-group">
@@ -49,12 +53,12 @@ function InputForm({ onAnalyze, loading }) {
             id="words"
             value={wordsInput}
             onChange={(e) => setWordsInput(e.target.value)}
-            placeholder="e.g., holiday, pumpkin, rewards, mobile"
+            placeholder="e.g., holiday, protein, smart queue, smart q"
             disabled={loading}
             rows="3"
             className="words-input"
           />
-          <small className="help-text">Enter words from PolyMarket markets, separated by commas</small>
+          <small className="help-text">✅ Multi-word phrases supported! Try: "smart queue", "pumpkin spice", etc.</small>
         </div>
 
         <button type="submit" disabled={loading} className="analyze-btn">

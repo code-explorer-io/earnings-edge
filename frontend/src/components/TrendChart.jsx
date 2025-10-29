@@ -1,10 +1,9 @@
-import { Line } from 'react-chartjs-2';
+import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
-  PointElement,
-  LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend
@@ -15,15 +14,19 @@ import './TrendChart.css';
 ChartJS.register(
   CategoryScale,
   LinearScale,
-  PointElement,
-  LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend
 );
 
-function TrendChart({ data }) {
+function TrendChart({ data, focusedWords }) {
   if (!data || data.length === 0) return null;
+
+  // Filter data if words are focused (multi-select)
+  const displayData = focusedWords && focusedWords.length > 0
+    ? data.filter(wordData => focusedWords.includes(wordData.word))
+    : data;
 
   // Prepare data for Chart.js
   const labels = data[0].quarters.map(q => q.quarter);
@@ -40,15 +43,14 @@ function TrendChart({ data }) {
     '#f97316'  // orange
   ];
 
-  const datasets = data.map((wordData, idx) => ({
+  const datasets = displayData.map((wordData, idx) => ({
     label: wordData.word,
     data: wordData.quarters.map(q => q.count),
+    backgroundColor: colors[idx % colors.length],
     borderColor: colors[idx % colors.length],
-    backgroundColor: colors[idx % colors.length] + '20', // Add transparency
-    tension: 0.3,
-    borderWidth: 2,
-    pointRadius: 4,
-    pointHoverRadius: 6
+    borderWidth: 1,
+    borderRadius: 4,
+    maxBarThickness: 60
   }));
 
   const chartData = {
@@ -72,7 +74,7 @@ function TrendChart({ data }) {
       },
       title: {
         display: true,
-        text: 'Word Frequency Trends Over Time',
+        text: 'Quarterly Mention Comparison',
         font: {
           size: 16,
           weight: 'bold'
@@ -118,9 +120,9 @@ function TrendChart({ data }) {
 
   return (
     <div className="trend-chart-container">
-      <h3>📈 Trend Visualization</h3>
+      <h3>📊 Quarterly Comparison</h3>
       <div className="chart-wrapper">
-        <Line data={chartData} options={options} />
+        <Bar data={chartData} options={options} />
       </div>
     </div>
   );

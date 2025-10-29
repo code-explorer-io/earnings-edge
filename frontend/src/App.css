@@ -2,6 +2,43 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Dark Mode Styles - Monochromatic Minimalism with Navy Blue */
+.app.dark-mode {
+  background-color: #0a1929;
+  color: #E0E0E0;
+}
+
+.app.dark-mode .app-main {
+  background-color: #0a1929;
+}
+
+.app.dark-mode .results-header {
+  border-bottom-color: #444444;
+}
+
+.app.dark-mode .results-header h2 {
+  color: #E0E0E0;
+}
+
+.app.dark-mode .error-message {
+  background-color: #2a2a2a;
+  border-color: #444444;
+  color: #E0E0E0;
+}
+
+.app.dark-mode .loading-message {
+  background-color: #2a2a2a;
+  border-color: #444444;
+  color: #E0E0E0;
+}
+
+.app.dark-mode .app-footer {
+  background-color: #0a0a0a;
+  border-top-color: #444444;
+  color: #B0B0B0;
 }
 
 .app-header {
@@ -10,6 +47,31 @@
   padding: 2rem 1rem;
   text-align: center;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.theme-toggle {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  font-size: 1.5rem;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+}
+
+.theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1) rotate(15deg);
 }
 
 .app-header h1 {

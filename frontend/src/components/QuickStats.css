@@ -7,9 +7,16 @@
 }
 
 .quick-stats-container h3 {
-  margin: 0 0 1.5rem 0;
+  margin: 0 0 0.5rem 0;
   color: #1f2937;
   font-size: 1.5rem;
+}
+
+.stats-subtitle {
+  margin: 0 0 1.5rem 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+  font-style: italic;
 }
 
 .stats-grid {
@@ -24,6 +31,7 @@
   border-radius: 10px;
   padding: 1.5rem;
   transition: all 0.3s ease;
+  cursor: pointer;
 }
 
 .stat-card:hover {
@@ -67,14 +75,53 @@
 
 .stat-label {
   color: #6b7280;
-  font-size: 0.9rem;
+  font-size: 1.05rem;
   font-weight: 500;
 }
 
 .stat-value {
   color: #1f2937;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 1.1rem;
+}
+
+/* Dark Mode Overrides */
+.dark-mode .quick-stats-container {
+  background: #0a1929;
+}
+
+.dark-mode .quick-stats-container h3 {
+  color: #E0E0E0;
+}
+
+.dark-mode .stats-subtitle {
+  color: #B0B0B0;
+}
+
+.dark-mode .stat-card {
+  background: #132337;
+  border: 1px solid #444444;
+}
+
+.dark-mode .stat-card:hover {
+  border-color: #888888;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+}
+
+.dark-mode .stat-header {
+  border-bottom-color: #444444;
+}
+
+.dark-mode .stat-word {
+  color: #E0E0E0;
+}
+
+.dark-mode .stat-label {
+  color: #E0E0E0;
+}
+
+.dark-mode .stat-value {
+  color: #E0E0E0;
 }
 
 @media (max-width: 768px) {

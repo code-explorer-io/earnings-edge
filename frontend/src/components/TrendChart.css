@@ -18,6 +18,15 @@
   width: 100%;
 }
 
+/* Dark Mode Overrides */
+.dark-mode .trend-chart-container {
+  background: #132337;
+}
+
+.dark-mode .trend-chart-container h3 {
+  color: #E0E0E0;
+}
+
 @media (max-width: 768px) {
   .trend-chart-container {
     padding: 1rem;

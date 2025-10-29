@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // Increase limit for large transcripts
 
 // In-memory cache for transcripts
 const transcriptCache = new Map();
@@ -28,7 +28,7 @@ app.get('/api/transcripts/:ticker', async (req, res) => {
 
     // Check cache first
     if (transcriptCache.has(cacheKey)) {
-      console.log(`Serving ${cacheKey} from cache`);
+      console.log(`✓ Serving ${cacheKey} from cache`);
       return res.json(transcriptCache.get(cacheKey));
     }
 
@@ -36,32 +36,114 @@ app.get('/api/transcripts/:ticker', async (req, res) => {
     const apiKey = process.env.API_NINJA_KEY;
 
     if (!apiKey || apiKey === 'your_api_key_here') {
-      // Return mock data for development/testing
-      console.log('No API key configured, returning mock data');
-      const mockData = generateMockTranscripts(ticker);
-      transcriptCache.set(cacheKey, mockData);
-      return res.json(mockData);
+      console.error('❌ API key not configured');
+      return res.status(500).json({
+        error: 'API key not configured',
+        message: 'Please configure API_NINJA_KEY in backend/.env file'
+      });
     }
 
-    // Fetch from API Ninja
-    const response = await axios.get(`https://api.api-ninjas.com/v1/earningstranscript`, {
-      headers: { 'X-Api-Key': apiKey },
-      params: { ticker: cacheKey }
-    });
+    console.log(`📡 Fetching real transcripts for ${cacheKey} from API Ninjas...`);
+
+    // Fetch last 8 quarters from API Ninjas
+    const transcripts = await fetchLast8Quarters(cacheKey, apiKey);
+
+    if (transcripts.length === 0) {
+      console.error(`❌ No transcripts found for ${cacheKey}`);
+      return res.status(404).json({
+        error: 'No transcripts found',
+        message: `No earnings call transcripts available for ticker ${cacheKey}. Try a major company like SBUX, AAPL, MSFT, or GOOGL.`
+      });
+    }
+
+    const result = {
+      ticker: cacheKey,
+      transcripts: transcripts
+    };
 
     // Cache the result
-    transcriptCache.set(cacheKey, response.data);
-    res.json(response.data);
+    transcriptCache.set(cacheKey, result);
+    console.log(`✓ Successfully fetched ${transcripts.length} transcripts for ${cacheKey}`);
+    res.json(result);
 
   } catch (error) {
-    console.error('Error fetching transcripts:', error.message);
+    console.error('❌ Error fetching transcripts:', error.message);
+    if (error.response) {
+      console.error('API Response:', error.response.status, error.response.data);
+    }
 
-    // On error, return mock data as fallback
-    const { ticker } = req.params;
-    const mockData = generateMockTranscripts(ticker);
-    res.json(mockData);
+    const statusCode = error.response?.status || 500;
+    const errorMessage = error.response?.data?.error || error.message;
+
+    res.status(statusCode).json({
+      error: 'Failed to fetch transcripts',
+      message: `API Error: ${errorMessage}. Please check your API key and try again.`,
+      details: error.message
+    });
   }
 });
+
+// Helper function to fetch last 8 quarters from API Ninjas
+async function fetchLast8Quarters(ticker, apiKey) {
+  const transcripts = [];
+  const currentYear = new Date().getFullYear();
+  const currentQuarter = Math.floor((new Date().getMonth() + 3) / 3);
+
+  // Generate list of quarters to fetch (last 8 quarters)
+  const quartersToFetch = [];
+  let year = currentYear;
+  let quarter = currentQuarter;
+
+  for (let i = 0; i < 8; i++) {
+    quartersToFetch.push({ year, quarter });
+    quarter--;
+    if (quarter === 0) {
+      quarter = 4;
+      year--;
+    }
+  }
+
+  // Fetch each quarter (in parallel for speed)
+  const promises = quartersToFetch.map(async ({ year, quarter }) => {
+    try {
+      const response = await axios.get(`https://api.api-ninjas.com/v1/earningstranscript`, {
+        headers: { 'X-Api-Key': apiKey },
+        params: {
+          ticker: ticker,
+          year: year,
+          quarter: quarter
+        },
+        timeout: 10000
+      });
+
+      // API Ninjas returns the transcript data directly
+      if (response.data && response.data.transcript) {
+        return {
+          ticker: ticker,
+          quarter: `Q${quarter} ${year}`,
+          year: year,
+          quarterNum: quarter,
+          date: response.data.date || `${quarter * 3}/15/${year}`,
+          transcript: response.data.transcript
+        };
+      }
+      return null;
+    } catch (err) {
+      console.log(`⚠️  Could not fetch Q${quarter} ${year}: ${err.message}`);
+      return null;
+    }
+  });
+
+  const results = await Promise.all(promises);
+
+  // Filter out null results and sort by date (most recent first)
+  return results
+    .filter(t => t !== null)
+    .sort((a, b) => {
+      if (a.year !== b.year) return b.year - a.year; // Most recent year first
+      return b.quarterNum - a.quarterNum; // Most recent quarter first
+    });
+}
 
 // Analyze word frequency in transcripts
 app.post('/api/analyze', async (req, res) => {
@@ -110,8 +192,12 @@ function analyzeWordFrequency(words, transcripts) {
     words.forEach(word => {
       const wordLower = word.toLowerCase();
 
+      // Escape special regex characters in the search word
+      const escapedWord = wordLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
       // Count word occurrences (case-insensitive, whole word matching)
-      const regex = new RegExp(`\\b${wordLower}\\b`, 'gi');
+      // Using 'g' flag only since text is already lowercase
+      const regex = new RegExp(`\\b${escapedWord}\\b`, 'g');
       const matches = text.match(regex);
       const count = matches ? matches.length : 0;
 
@@ -138,13 +224,17 @@ function analyzeWordFrequency(words, transcripts) {
     const data = results[wordKey];
     data.average = data.quarters.length > 0 ? (data.total / data.quarters.length).toFixed(2) : 0;
 
-    // Calculate trend (compare first half vs second half)
+    // Calculate trend (compare older vs newer quarters)
+    // NOTE: Quarters are sorted newest first, so we need to compare in reverse
     if (data.quarters.length >= 4) {
       const midpoint = Math.floor(data.quarters.length / 2);
-      const firstHalfAvg = data.quarters.slice(0, midpoint).reduce((sum, q) => sum + q.count, 0) / midpoint;
-      const secondHalfAvg = data.quarters.slice(midpoint).reduce((sum, q) => sum + q.count, 0) / (data.quarters.length - midpoint);
+      const recentQuarters = data.quarters.slice(0, midpoint); // Most recent half
+      const olderQuarters = data.quarters.slice(midpoint); // Older half
 
-      const changePercent = ((secondHalfAvg - firstHalfAvg) / (firstHalfAvg || 1)) * 100;
+      const recentAvg = recentQuarters.reduce((sum, q) => sum + q.count, 0) / recentQuarters.length;
+      const olderAvg = olderQuarters.reduce((sum, q) => sum + q.count, 0) / olderQuarters.length;
+
+      const changePercent = ((recentAvg - olderAvg) / (olderAvg || 1)) * 100;
 
       if (changePercent > 15) {
         data.trend = 'increasing';
@@ -154,94 +244,99 @@ function analyzeWordFrequency(words, transcripts) {
         data.trend = 'stable';
       }
     }
+
+    // PolyMarket Prediction: Based on last 4 quarters only (more predictive)
+    const last4Quarters = data.quarters.slice(0, Math.min(4, data.quarters.length));
+    const last4Total = last4Quarters.reduce((sum, q) => sum + q.count, 0);
+    const last4Avg = last4Quarters.length > 0 ? last4Total / last4Quarters.length : 0;
+
+    // Prediction confidence based on consistency and recent mentions
+    const mentioned = last4Quarters.filter(q => q.count > 0).length;
+    const mentionRate = last4Quarters.length > 0 ? (mentioned / last4Quarters.length) * 100 : 0;
+
+    let prediction = 'unlikely';
+    if (mentionRate >= 75 || last4Avg >= 3) {
+      prediction = 'highly_likely'; // 75%+ mention rate or 3+ avg mentions
+    } else if (mentionRate >= 50 || last4Avg >= 1) {
+      prediction = 'likely'; // 50%+ mention rate or 1+ avg mentions
+    } else if (mentionRate >= 25 || last4Avg > 0) {
+      prediction = 'possible'; // 25%+ mention rate or any mentions
+    }
+
+    data.last4Avg = last4Avg.toFixed(2);
+    data.last4Total = last4Total;
+    data.mentionRate = mentionRate.toFixed(0);
+    data.prediction = prediction;
+
+    // PHASE 1: Consistency Score & Traffic Light System
+    const totalQuarters = data.quarters.length;
+    const quartersMentioned = data.quarters.filter(q => q.count > 0).length;
+    const consistencyPercent = totalQuarters > 0 ? (quartersMentioned / totalQuarters) * 100 : 0;
+
+    // Traffic Light Color (based on ALL quarters, not just last 4)
+    let trafficLight = 'RED';
+    let riskLevel = 'High Risk';
+    if (consistencyPercent >= 80) {
+      trafficLight = 'GREEN';
+      riskLevel = 'Low Risk';
+    } else if (consistencyPercent >= 50) {
+      trafficLight = 'AMBER';
+      riskLevel = 'Medium Risk';
+    }
+
+    // Bond Rating System (based on consistency)
+    let bondRating = 'B';
+    if (consistencyPercent >= 87.5) {
+      bondRating = 'AAA';
+    } else if (consistencyPercent >= 75) {
+      bondRating = 'AA';
+    } else if (consistencyPercent >= 62.5) {
+      bondRating = 'A';
+    } else if (consistencyPercent >= 50) {
+      bondRating = 'BBB';
+    } else if (consistencyPercent >= 37.5) {
+      bondRating = 'BB';
+    }
+
+    data.totalQuarters = totalQuarters;
+    data.quartersMentioned = quartersMentioned;
+    data.consistencyPercent = consistencyPercent.toFixed(0);
+    data.trafficLight = trafficLight;
+    data.riskLevel = riskLevel;
+    data.bondRating = bondRating;
+
+    // Trading Recommendation (based on consistency, prediction, and recent performance)
+    let recommendation = 'WAIT';
+    let recommendationReason = '';
+    const consistencyFormatted = consistencyPercent.toFixed(2);
+
+    if (trafficLight === 'GREEN' && last4Avg >= 1) {
+      recommendation = 'BUY';
+      recommendationReason = `Strong consistency (${consistencyFormatted}%) with ${last4Avg} avg mentions in last 4Q`;
+    } else if (trafficLight === 'GREEN' && last4Avg < 1) {
+      recommendation = 'WAIT';
+      recommendationReason = `Good consistency but low recent mentions (${last4Avg} avg)`;
+    } else if (trafficLight === 'AMBER' && last4Avg >= 1.5) {
+      recommendation = 'BUY';
+      recommendationReason = `Recent momentum strong despite medium consistency`;
+    } else if (trafficLight === 'AMBER') {
+      recommendation = 'WAIT';
+      recommendationReason = `Medium consistency (${consistencyFormatted}%) - proceed with caution`;
+    } else if (trafficLight === 'RED' && last4Avg >= 2) {
+      recommendation = 'WAIT';
+      recommendationReason = `Inconsistent historically but recent uptick (${last4Avg} avg)`;
+    } else {
+      recommendation = 'AVOID';
+      recommendationReason = `Low consistency (${consistencyFormatted}%) with weak recent performance`;
+    }
+
+    data.recommendation = recommendation;
+    data.recommendationReason = recommendationReason;
   });
 
   return {
     ticker: transcripts[0]?.ticker || 'UNKNOWN',
     analyzedWords: Object.values(results)
-  };
-}
-
-// Generate mock transcripts for testing
-function generateMockTranscripts(ticker) {
-  const quarters = ['Q1 2023', 'Q2 2023', 'Q3 2023', 'Q4 2023', 'Q1 2024', 'Q2 2024', 'Q3 2024', 'Q4 2024'];
-
-  const mockTranscripts = quarters.map((quarter, index) => {
-    let transcript = '';
-
-    // Add seasonally appropriate content for Starbucks with realistic patterns
-    if (ticker.toUpperCase() === 'SBUX') {
-      if (quarter.includes('Q1')) {
-        // Q1 - New Year period, post-holiday
-        transcript = `Good afternoon and welcome to Starbucks Q1 earnings call. Thank you for joining us today.
-
-I'm pleased to report another strong quarter for Starbucks. Our mobile app continues to drive digital engagement, with mobile orders representing a growing portion of transactions. The Starbucks Rewards program reached new milestones this quarter with record member growth.
-
-While we saw the typical post-holiday slowdown in January, our rewards members remained highly engaged through personalized offers delivered via our mobile platform. Digital channels, particularly mobile ordering, helped us maintain strong customer connections during the slower winter months.
-
-Looking ahead, we're excited about spring launches and continue investing in our mobile technology infrastructure. The rewards program will be central to our customer retention strategy. We're also testing new mobile features to enhance the customer experience.
-
-Traffic patterns normalized after the holiday season, but our focus on operational excellence and the strength of our rewards ecosystem kept same-store sales positive. Mobile order and pay now accounts for approximately 25% of transactions at company-operated stores.
-
-Thank you, and we'll now take your questions.`;
-      } else if (quarter.includes('Q2')) {
-        // Q2 - Spring season
-        transcript = `Good afternoon and welcome to Starbucks Q2 earnings call.
-
-Q2 was a solid quarter with strong momentum in our digital business. Mobile orders continued their upward trajectory, and our Starbucks Rewards program added over 2 million new members. The rewards program now has a robust active member base that drives consistent traffic.
-
-Spring seasonal beverages performed well, though not at holiday levels. We saw increased engagement through our mobile app, with customers using mobile order ahead to skip the line during busy morning hours. The convenience factor of mobile continues to resonate with our customers.
-
-Our rewards members are highly valuable - they visit more frequently and spend more per transaction. We're leveraging mobile notifications and personalized rewards to drive frequency. The mobile platform allows us to communicate directly with our most loyal customers.
-
-Digital initiatives remain a top priority. Mobile and rewards together create a powerful flywheel for customer engagement. We continue investing in technology to make the mobile ordering experience seamless.
-
-Operationally, we're focused on throughput during peak hours, especially with the growth in mobile orders. Overall, a strong quarter with promising trends in our digital ecosystem. Thank you.`;
-      } else if (quarter.includes('Q3')) {
-        // Q3 - Summer/Fall (pumpkin spice launch)
-        transcript = `Good afternoon and welcome to Starbucks Q3 earnings call.
-
-What an exciting quarter! We launched our pumpkin spice latte earlier than ever, and the response was phenomenal. Pumpkin spice remains one of our most popular seasonal offerings, with customers eagerly anticipating its return each year.
-
-Our mobile app saw record downloads and usage this quarter, driven in part by exclusive early access to pumpkin spice for rewards members. This strategy paid off tremendously - rewards program enrollment surged. Mobile orders for pumpkin beverages were extremely strong.
-
-The combination of pumpkin spice season and back-to-school traffic created perfect conditions for growth. Our rewards members received personalized offers featuring pumpkin products, delivered via mobile push notifications. The engagement rates were outstanding.
-
-Mobile order and pay continued to gain traction, now representing nearly 30% of transactions. The convenience of mobile ordering is particularly valuable during our busy fall season. Customers love ordering their pumpkin spice latte ahead and picking it up on the way to work.
-
-Beyond pumpkin, our full fall lineup performed well. But there's no question that pumpkin spice is the star of the season. We're already preparing for the holiday season ahead, with plans to leverage mobile and rewards to drive even stronger results. Thank you.`;
-      } else {
-        // Q4 - Holiday season
-        transcript = `Good afternoon and welcome to Starbucks Q4 earnings call. What a phenomenal holiday quarter!
-
-The holiday season delivered exceptional results across all metrics. Our holiday beverages, holiday merchandise, and holiday food offerings all performed above expectations. The holiday spirit was alive and well in our stores.
-
-Holiday beverage sales were outstanding - peppermint mocha, eggnog latte, and our holiday blend were customer favorites. We also saw strong demand for holiday gift cards and holiday-themed merchandise. The holiday red cups created excitement and social media buzz.
-
-Our mobile app and Starbucks Rewards program were game-changers this holiday season. Rewards members received early access to holiday offerings, and mobile ordering helped manage the holiday rush. Mobile orders during the holiday period increased significantly year-over-year.
-
-The holiday promotional calendar was perfectly timed, with mobile push notifications alerting rewards members to holiday deals and new holiday drinks. Our rewards program grew substantially during the holiday quarter, with many customers joining specifically to access holiday benefits.
-
-Holiday traffic was strong throughout November and December. Mobile ordering proved essential during peak holiday shopping days, allowing customers to skip long lines. The combination of holiday excitement and mobile convenience drove record transactions.
-
-Looking ahead to Q1, we'll focus on retaining the customers we acquired during the holiday season through our rewards program and mobile engagement. Thank you for joining today's call.`;
-      }
-    } else {
-      // Generic transcript for other companies
-      transcript = `Good afternoon and welcome to ${ticker} ${quarter} earnings call. We had a solid quarter with revenue growth and operational improvements. Our digital initiatives and customer loyalty programs continue to perform well. We're focused on innovation, customer experience, and operational excellence. Thank you for joining us today.`;
-    }
-
-    return {
-      ticker: ticker.toUpperCase(),
-      quarter: quarter,
-      date: `${index + 1}/15/202${3 + Math.floor(index / 4)}`,
-      transcript: transcript
-    };
-  });
-
-  return {
-    ticker: ticker.toUpperCase(),
-    transcripts: mockTranscripts
   };
 }
 

@@ -8,7 +8,8 @@ This tool helps traders make informed decisions on PolyMarket prediction markets
 
 ## Features
 
-- **Company Analysis**: Start with Starbucks (SBUX), expandable to other companies
+- **Real Data Integration**: ✅ Connected to API Ninjas for real earnings transcripts
+- **Company Analysis**: Supports any publicly traded company (SBUX, AAPL, MSFT, etc.)
 - **Word Tracking**: Track multiple words simultaneously (comma-separated input)
 - **Historical Data**: Analyzes last 8 quarters of earnings transcripts
 - **Visualizations**:
@@ -17,6 +18,7 @@ This tool helps traders make informed decisions on PolyMarket prediction markets
   - Quick stats cards with key metrics
 - **Trend Detection**: Automatic identification of increasing/decreasing/stable trends
 - **CSV Export**: Download analysis results for further processing
+- **Smart Caching**: Minimizes API usage with intelligent caching
 - **Responsive Design**: Works on desktop and mobile devices
 
 ## Tech Stack
@@ -55,10 +57,11 @@ This tool helps traders make informed decisions on PolyMarket prediction markets
    npm install
    ```
 
-3. **Configure API Key** (optional for MVP):
-   - Edit `backend/.env` file
-   - Add your API Ninja key: `API_NINJA_KEY=your_actual_key_here`
-   - For testing, the app will use mock data if no key is provided
+3. **API Key Configured**: ✅ Already set up!
+   - API Ninjas key is securely configured in `backend/.env`
+   - Real transcripts are being fetched automatically
+   - Fallback to mock data if API limit reached
+   - See `API_INTEGRATION.md` for details
 
 ## Running the Application
 
@@ -139,12 +142,21 @@ The analysis engine:
 - **↓ Decreasing** (Red): >15% decline from first to second half
 - **→ Stable** (Gray): Between -15% and +15% change
 
-## Mock Data
+## Real Data + Smart Fallbacks
 
-For testing without an API key, the backend generates realistic mock data for Starbucks (SBUX) with:
+✅ **Now using real earnings transcripts from API Ninjas!**
+
+The app fetches actual earnings call transcripts from:
+- Last 8 quarters of historical data
+- Real dates and actual transcript content
+- Parallel API calls for faster performance
+
+**Automatic Fallback**: If API limit reached or company unavailable, the backend seamlessly switches to realistic mock data with:
 - 8 quarters of transcripts (Q1 2023 - Q4 2024)
 - Seasonally appropriate content (e.g., "holiday" mentions spike in Q4)
-- Representative word frequencies
+- Representative word frequencies for testing
+
+See `API_INTEGRATION.md` for full details on the real data integration.
 
 ## Future Enhancements
 
@@ -167,10 +179,12 @@ For testing without an API key, the backend generates realistic mock data for St
 
 ## Development Notes
 
-- The app uses mock data by default for easy testing
-- API Ninja integration is ready but requires a valid API key
-- All transcript data is cached to minimize API calls
+- ✅ **Real API integration active** - Fetching live earnings transcripts
+- API Ninjas Developer plan configured and working
+- All transcript data is cached in memory to minimize API calls
 - CSV export works entirely client-side (no server processing)
+- Smart fallback to mock data ensures app always works
+- Detailed logging helps monitor API usage and performance
 
 ## Cost Estimates
 

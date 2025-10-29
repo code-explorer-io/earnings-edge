@@ -59,3 +59,50 @@ textarea:focus-visible {
   outline: 2px solid #667eea;
   outline-offset: 0;
 }
+
+/* Dark Mode Global Styles - Monochromatic Minimalism */
+.dark-mode .stat-card,
+.dark-mode .results-table-container,
+.dark-mode .trend-chart-container {
+  background: #1e1e1e;
+  border: 1px solid #444444;
+}
+
+.dark-mode .stat-word,
+.dark-mode h3,
+.dark-mode h4 {
+  color: #E0E0E0;
+}
+
+.dark-mode .stat-label {
+  color: #E0E0E0;
+  font-weight: 600;
+}
+
+.dark-mode .stat-value {
+  color: #E0E0E0;
+}
+
+.dark-mode .results-table {
+  background: #1e1e1e;
+  color: #E0E0E0;
+}
+
+.dark-mode .results-table th {
+  background: #0a0a0a;
+  color: #E0E0E0;
+  border-bottom-color: #444444;
+}
+
+.dark-mode .results-table td {
+  border-bottom-color: #444444;
+  color: #E0E0E0;
+}
+
+.dark-mode .results-table tbody tr:hover {
+  background-color: #252525;
+}
+
+.dark-mode .table-subtitle {
+  color: #B0B0B0;
+}

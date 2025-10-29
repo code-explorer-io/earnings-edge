@@ -4,6 +4,13 @@
   padding: 2rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   margin-bottom: 2rem;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.dark-mode .input-form-container {
+  background: #132337;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+  border: 1px solid #444444;
 }
 
 .input-form {
@@ -21,7 +28,11 @@
 .form-group label {
   font-weight: 600;
   color: #374151;
-  font-size: 0.95rem;
+  font-size: 1.05rem;
+}
+
+.dark-mode .form-group label {
+  color: #E0E0E0;
 }
 
 .ticker-input,
@@ -30,8 +41,25 @@
   border: 2px solid #e5e7eb;
   border-radius: 8px;
   font-size: 1rem;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, background-color 0.2s;
   font-family: inherit;
+}
+
+.dark-mode .ticker-input,
+.dark-mode .words-input {
+  background: #0a0a0a;
+  border-color: #444444;
+  color: #E0E0E0;
+}
+
+.dark-mode .ticker-input:disabled,
+.dark-mode .words-input:disabled {
+  background-color: #0a0a0a;
+  color: #888888;
+}
+
+.dark-mode .help-text {
+  color: #B0B0B0;
 }
 
 .ticker-input:focus,
@@ -54,7 +82,7 @@
 
 .help-text {
   color: #6b7280;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   margin-top: 0.25rem;
 }
 

@@ -7,9 +7,16 @@
 }
 
 .results-table-container h3 {
-  margin: 0 0 1.5rem 0;
+  margin: 0 0 0.5rem 0;
   color: #1f2937;
   font-size: 1.5rem;
+}
+
+.table-subtitle {
+  margin: 0 0 1.5rem 0;
+  color: #6b7280;
+  font-size: 1.1rem;
+  font-style: italic;
 }
 
 .table-wrapper {
@@ -19,7 +26,7 @@
 .results-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.95rem;
+  font-size: 1rem;
 }
 
 .results-table thead {
@@ -81,6 +88,50 @@
 
 .quarter-column {
   text-align: center;
+}
+
+/* Dark Mode Overrides */
+.dark-mode .results-table-container {
+  background: #132337;
+}
+
+.dark-mode .results-table-container h3 {
+  color: #E0E0E0;
+}
+
+.dark-mode .table-subtitle {
+  color: #B0B0B0;
+}
+
+.dark-mode .results-table thead {
+  background-color: #0a0a0a;
+}
+
+.dark-mode .results-table th {
+  color: #E0E0E0;
+  border-bottom-color: #444444;
+}
+
+.dark-mode .results-table td {
+  border-bottom-color: #444444;
+  color: #E0E0E0;
+}
+
+.dark-mode .results-table tbody tr:hover {
+  background-color: #252525;
+}
+
+.dark-mode .word-cell {
+  color: #E0E0E0;
+}
+
+.dark-mode .count-cell {
+  color: #E0E0E0;
+}
+
+.dark-mode .total-cell,
+.dark-mode .avg-cell {
+  color: #E0E0E0;
 }
 
 @media (max-width: 768px) {
