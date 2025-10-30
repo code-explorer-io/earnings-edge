@@ -4,10 +4,14 @@ import InputForm from './components/InputForm';
 import ResultsTable from './components/ResultsTable';
 import TrendChart from './components/TrendChart';
 import QuickStats from './components/QuickStats';
+import Calculator from './components/Calculator';
+import About from './components/About';
 
-const API_BASE_URL = 'http://localhost:3001/api';
+// Use environment variable for API URL, fallback to production API, or localhost for dev
+const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.MODE === 'production' ? '/api' : 'http://localhost:3001/api');
 
 function App() {
+  const [activeTab, setActiveTab] = useState('analyze'); // 'analyze', 'calculator', 'about'
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [analysisResults, setAnalysisResults] = useState(null);
@@ -116,8 +120,36 @@ function App() {
         <p className="subtitle">Analyze word frequency trends in earnings calls for PolyMarket insights</p>
       </header>
 
+      {/* Tab Navigation */}
+      <nav className="tabs-container">
+        <button
+          className={`tab ${activeTab === 'analyze' ? 'active' : ''}`}
+          onClick={() => setActiveTab('analyze')}
+        >
+          <span className="tab-icon">🔍</span>
+          <span className="tab-label">Analyze</span>
+        </button>
+        <button
+          className={`tab ${activeTab === 'calculator' ? 'active' : ''}`}
+          onClick={() => setActiveTab('calculator')}
+        >
+          <span className="tab-icon">💰</span>
+          <span className="tab-label">Calculator</span>
+        </button>
+        <button
+          className={`tab ${activeTab === 'about' ? 'active' : ''}`}
+          onClick={() => setActiveTab('about')}
+        >
+          <span className="tab-icon">📖</span>
+          <span className="tab-label">About</span>
+        </button>
+      </nav>
+
       <main className="app-main">
-        <InputForm onAnalyze={handleAnalyze} loading={loading} />
+        {/* Analyze Tab Content */}
+        {activeTab === 'analyze' && (
+          <>
+            <InputForm onAnalyze={handleAnalyze} loading={loading} />
 
         {error && (
           <div className="error-message">
@@ -208,6 +240,14 @@ function App() {
             />
           </div>
         )}
+          </>
+        )}
+
+        {/* Calculator Tab Content */}
+        {activeTab === 'calculator' && <Calculator />}
+
+        {/* About Tab Content */}
+        {activeTab === 'about' && <About />}
       </main>
 
       <footer className="app-footer">

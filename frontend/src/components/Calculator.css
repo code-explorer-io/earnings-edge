@@ -1,0 +1,390 @@
+.calculator-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.calculator-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.calculator-header h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.calculator-subtitle {
+  color: #888;
+  font-size: 1.1rem;
+}
+
+.dark-mode .calculator-subtitle {
+  color: #B0B0B0;
+}
+
+.positions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.calculator-card {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode .calculator-card {
+  background: #132337;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+  border: 1px solid #444444;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.dark-mode .card-header {
+  border-bottom-color: #444444;
+}
+
+.card-header h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+}
+
+.dark-mode .card-header h3 {
+  color: #E0E0E0;
+}
+
+.remove-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.remove-btn:hover {
+  background: #dc2626;
+  transform: scale(1.1);
+}
+
+.input-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.input-group label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 1rem;
+}
+
+.dark-mode .input-group label {
+  color: #E0E0E0;
+}
+
+.input-group input {
+  padding: 0.75rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  background: white;
+  color: #374151;
+}
+
+.dark-mode .input-group input {
+  background: #0a0a0a;
+  border-color: #444444;
+  color: #E0E0E0;
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.input-hint {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.dark-mode .input-hint {
+  color: #888888;
+}
+
+.metrics-section {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.dark-mode .metrics-section {
+  background: #0a0a0a;
+  border: 1px solid #2a2a2a;
+}
+
+.metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dark-mode .metric-row {
+  border-bottom-color: #2a2a2a;
+}
+
+.metric-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.metric-label {
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.dark-mode .metric-label {
+  color: #B0B0B0;
+}
+
+.metric-value {
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #374151;
+}
+
+.dark-mode .metric-value {
+  color: #E0E0E0;
+}
+
+.metric-value.highlight {
+  color: #667eea;
+  font-size: 1.4rem;
+}
+
+.scenarios-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.scenario {
+  border-radius: 8px;
+  padding: 1.25rem;
+  transition: all 0.2s;
+}
+
+.scenario:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.yes-scenario {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.no-scenario {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+}
+
+.scenario-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.scenario-icon {
+  font-size: 1.5rem;
+}
+
+.scenario-header h4 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.scenario-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.scenario-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+}
+
+.scenario-row.total {
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.scenario-row .value {
+  font-weight: 600;
+}
+
+.scenario-row .value.profit,
+.scenario-row .value.roi-positive {
+  font-weight: 700;
+}
+
+.scenario-row .value.loss,
+.scenario-row .value.roi-negative {
+  font-weight: 700;
+}
+
+.add-position-btn {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-bottom: 2rem;
+}
+
+.add-position-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+}
+
+.calculator-footer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 1.5rem;
+  margin-top: 3rem;
+}
+
+.info-box {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode .info-box {
+  background: #132337;
+  border: 1px solid #444444;
+}
+
+.info-box h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #374151;
+}
+
+.dark-mode .info-box h4 {
+  color: #E0E0E0;
+}
+
+.info-box ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.info-box li {
+  padding: 0.5rem 0;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+.dark-mode .info-box li {
+  color: #B0B0B0;
+}
+
+.info-box li strong {
+  color: #374151;
+  font-weight: 600;
+}
+
+.dark-mode .info-box li strong {
+  color: #E0E0E0;
+}
+
+.info-box.example p {
+  color: #6b7280;
+  line-height: 1.8;
+  margin: 0;
+}
+
+.dark-mode .info-box.example p {
+  color: #B0B0B0;
+}
+
+@media (max-width: 768px) {
+  .calculator-container {
+    padding: 1rem;
+  }
+
+  .positions-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .scenarios-section {
+    grid-template-columns: 1fr;
+  }
+
+  .calculator-footer {
+    grid-template-columns: 1fr;
+  }
+
+  .calculator-header h2 {
+    font-size: 1.5rem;
+  }
+}

@@ -2,7 +2,12 @@
   "permissions": {
     "allow": [
       "Bash(npm run dev:*)",
-      "Bash(node server.js:*)"
+      "Bash(node server.js:*)",
+      "Bash(npm install:*)",
+      "Bash(vercel:*)",
+      "Bash(curl:*)",
+      "Bash(node -e:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

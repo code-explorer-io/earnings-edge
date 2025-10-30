@@ -1,0 +1,404 @@
+.about-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.about-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.about-header h2 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.about-subtitle {
+  color: #888;
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+.dark-mode .about-subtitle {
+  color: #B0B0B0;
+}
+
+.about-content {
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+.about-section {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode .about-section {
+  background: #132337;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+  border: 1px solid #444444;
+}
+
+.section-icon {
+  font-size: 3rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.about-section h3 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #374151;
+}
+
+.dark-mode .about-section h3 {
+  color: #E0E0E0;
+}
+
+.about-section p {
+  color: #6b7280;
+  line-height: 1.8;
+  font-size: 1.05rem;
+  margin-bottom: 1rem;
+}
+
+.dark-mode .about-section p {
+  color: #B0B0B0;
+}
+
+/* Steps */
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.step {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.step-number {
+  flex-shrink: 0;
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.step-content h4 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #374151;
+}
+
+.dark-mode .step-content h4 {
+  color: #E0E0E0;
+}
+
+.step-content p {
+  color: #6b7280;
+  margin: 0;
+}
+
+.dark-mode .step-content p {
+  color: #B0B0B0;
+}
+
+/* Features Grid */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.feature {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition: all 0.2s;
+}
+
+.dark-mode .feature {
+  background: #0a0a0a;
+  border: 1px solid #2a2a2a;
+}
+
+.feature:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode .feature:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+}
+
+.feature h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #374151;
+}
+
+.dark-mode .feature h4 {
+  color: #E0E0E0;
+}
+
+.feature p {
+  color: #6b7280;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.dark-mode .feature p {
+  color: #B0B0B0;
+}
+
+/* Metrics Explanation */
+.metrics-explanation {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.metric-card {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 1.5rem;
+  border-left: 4px solid #667eea;
+}
+
+.dark-mode .metric-card {
+  background: #0a0a0a;
+  border: 1px solid #2a2a2a;
+  border-left: 4px solid #667eea;
+}
+
+.metric-card h4 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: #374151;
+}
+
+.dark-mode .metric-card h4 {
+  color: #E0E0E0;
+}
+
+.metric-card p,
+.metric-card ul {
+  color: #6b7280;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.dark-mode .metric-card p,
+.dark-mode .metric-card ul {
+  color: #B0B0B0;
+}
+
+.metric-card ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.metric-card li {
+  padding: 0.5rem 0;
+}
+
+.metric-example {
+  background: white;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-top: 1rem;
+  border: 1px solid #e5e7eb;
+}
+
+.dark-mode .metric-example {
+  background: #132337;
+  border-color: #444444;
+}
+
+.metric-example strong {
+  color: #667eea;
+  font-weight: 600;
+}
+
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin-right: 0.5rem;
+}
+
+.badge.green {
+  background: #10b981;
+  color: white;
+}
+
+.badge.amber {
+  background: #f59e0b;
+  color: white;
+}
+
+.badge.red {
+  background: #ef4444;
+  color: white;
+}
+
+/* Disclaimer */
+.disclaimer-box {
+  background: #fef3c7;
+  border-left: 4px solid #f59e0b;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-top: 1rem;
+}
+
+.dark-mode .disclaimer-box {
+  background: #3a2a0a;
+  border-left-color: #f59e0b;
+}
+
+.disclaimer-box p {
+  color: #92400e;
+  margin-bottom: 1rem;
+}
+
+.dark-mode .disclaimer-box p {
+  color: #fbbf24;
+}
+
+.disclaimer-box p:last-child {
+  margin-bottom: 0;
+}
+
+/* Tips */
+.tips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.tip {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 1.25rem;
+  border-left: 3px solid #667eea;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+.dark-mode .tip {
+  background: #0a0a0a;
+  border: 1px solid #2a2a2a;
+  border-left: 3px solid #667eea;
+  color: #B0B0B0;
+}
+
+.tip strong {
+  color: #374151;
+  font-weight: 600;
+}
+
+.dark-mode .tip strong {
+  color: #E0E0E0;
+}
+
+/* CTA Section */
+.cta-section {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  text-align: center;
+  color: white;
+}
+
+.cta-section h3 {
+  color: white;
+  font-size: 2rem;
+}
+
+.cta-section p {
+  color: white;
+  font-size: 1.2rem;
+}
+
+/* Footer */
+.about-footer {
+  text-align: center;
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 2px solid #e5e7eb;
+}
+
+.dark-mode .about-footer {
+  border-top-color: #444444;
+}
+
+.about-footer p {
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin: 0.5rem 0;
+}
+
+.dark-mode .about-footer p {
+  color: #888888;
+}
+
+.disclaimer-footer {
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.dark-mode .disclaimer-footer {
+  color: #666666;
+}
+
+@media (max-width: 768px) {
+  .about-container {
+    padding: 1rem;
+  }
+
+  .about-header h2 {
+    font-size: 2rem;
+  }
+
+  .about-section {
+    padding: 1.5rem;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .step {
+    flex-direction: column;
+  }
+
+  .step-number {
+    margin: 0 auto;
+  }
+}

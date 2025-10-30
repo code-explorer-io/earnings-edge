@@ -86,13 +86,13 @@ app.get('/api/transcripts/:ticker', async (req, res) => {
 // Helper function to fetch last 8 quarters from API Ninjas
 async function fetchLast8Quarters(ticker, apiKey) {
   const transcripts = [];
-  const currentYear = new Date().getFullYear();
-  const currentQuarter = Math.floor((new Date().getMonth() + 3) / 3);
+
+  // Start from Q3 2024 to ensure we have recent, completed earnings data
+  let year = 2024;
+  let quarter = 3;
 
   // Generate list of quarters to fetch (last 8 quarters)
   const quartersToFetch = [];
-  let year = currentYear;
-  let quarter = currentQuarter;
 
   for (let i = 0; i < 8; i++) {
     quartersToFetch.push({ year, quarter });

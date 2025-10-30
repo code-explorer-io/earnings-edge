@@ -1,0 +1,161 @@
+// Using native fetch instead of axios to avoid header encoding issues
+
+// In-memory cache for transcripts (will persist during function lifetime)
+const transcriptCache = new Map();
+
+// Helper function to fetch last 8 quarters from API Ninjas
+async function fetchLast8Quarters(ticker, apiKey) {
+  const transcripts = [];
+
+  // Start from Q3 2024 to ensure we have recent, completed earnings data
+  let year = 2024;
+  let quarter = 3;
+
+  // Generate list of quarters to fetch (last 8 quarters)
+  const quartersToFetch = [];
+
+  for (let i = 0; i < 8; i++) {
+    quartersToFetch.push({ year, quarter });
+    quarter--;
+    if (quarter === 0) {
+      quarter = 4;
+      year--;
+    }
+  }
+
+  // Fetch each quarter (in parallel for speed)
+  const promises = quartersToFetch.map(async ({ year, quarter }) => {
+    try {
+      const url = `https://api.api-ninjas.com/v1/earningstranscript?ticker=${ticker}&year=${year}&quarter=${quarter}`;
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'X-Api-Key': apiKey
+        }
+      });
+
+      if (!response.ok) {
+        console.error(`⚠️  API returned ${response.status} for Q${quarter} ${year}`);
+        return null;
+      }
+
+      const data = await response.json();
+
+      // API Ninjas returns the transcript data directly
+      if (data && data.transcript) {
+        return {
+          ticker: ticker,
+          quarter: `Q${quarter} ${year}`,
+          year: year,
+          quarterNum: quarter,
+          date: data.date || `${quarter * 3}/15/${year}`,
+          transcript: data.transcript
+        };
+      }
+      return null;
+    } catch (err) {
+      console.error(`⚠️  Could not fetch Q${quarter} ${year}:`, {
+        message: err.message,
+        stack: err.stack
+      });
+      return null;
+    }
+  });
+
+  const results = await Promise.all(promises);
+
+  // Filter out null results and sort by date (most recent first)
+  return results
+    .filter(t => t !== null)
+    .sort((a, b) => {
+      if (a.year !== b.year) return b.year - a.year;
+      return b.quarterNum - a.quarterNum;
+    });
+}
+
+export default async function handler(req, res) {
+  console.log('🚀 Transcripts API called:', req.query);
+
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    const { ticker } = req.query;
+    const cacheKey = ticker.toUpperCase();
+
+    console.log(`📋 Processing ticker: ${cacheKey}`);
+
+    // Check cache first
+    if (transcriptCache.has(cacheKey)) {
+      console.log(`✓ Serving ${cacheKey} from cache`);
+      return res.status(200).json(transcriptCache.get(cacheKey));
+    }
+
+    // API Ninja endpoint for earnings transcripts
+    const apiKey = process.env.API_NINJA_KEY;
+
+    console.log(`🔑 API Key present: ${!!apiKey}, length: ${apiKey?.length}`);
+
+    if (!apiKey || apiKey === 'your_api_key_here') {
+      console.error('❌ API key not configured');
+      return res.status(500).json({
+        error: 'API key not configured',
+        message: 'Please configure API_NINJA_KEY in Vercel environment variables'
+      });
+    }
+
+    console.log(`📡 Fetching transcripts for ${cacheKey} from API Ninjas...`);
+
+    // Fetch last 8 quarters from API Ninjas
+    const transcripts = await fetchLast8Quarters(cacheKey, apiKey);
+
+    console.log(`📊 Fetched ${transcripts.length} transcripts`);
+
+    if (transcripts.length === 0) {
+      console.error(`❌ No transcripts found for ${cacheKey}`);
+      return res.status(404).json({
+        error: 'No transcripts found',
+        message: `No earnings call transcripts available for ticker ${cacheKey}. Try a major company like SBUX, AAPL, MSFT, or GOOGL.`
+      });
+    }
+
+    const result = {
+      ticker: cacheKey,
+      transcripts: transcripts
+    };
+
+    // Cache the result
+    transcriptCache.set(cacheKey, result);
+    console.log(`✓ Successfully fetched ${transcripts.length} transcripts for ${cacheKey}`);
+
+    return res.status(200).json(result);
+
+  } catch (error) {
+    console.error('❌ Error fetching transcripts:', error.message);
+    if (error.response) {
+      console.error('API Response:', error.response.status, error.response.data);
+    }
+
+    const statusCode = error.response?.status || 500;
+    const errorMessage = error.response?.data?.error || error.message;
+
+    return res.status(statusCode).json({
+      error: 'Failed to fetch transcripts',
+      message: `API Error: ${errorMessage}. Please check your API key and try again.`,
+      details: error.message
+    });
+  }
+}
