@@ -2,15 +2,77 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import axios from 'axios';
+import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
 
 dotenv.config();
+
+// Validate required environment variables
+if (!process.env.API_NINJA_KEY || process.env.API_NINJA_KEY === 'your_api_key_here') {
+  console.error('❌ ERROR: API_NINJA_KEY not found in environment variables');
+  console.error('Please create a .env file with API_NINJA_KEY=your_key_here');
+  process.exit(1);
+}
+console.log('✅ API key loaded successfully');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// CORS whitelist - only allow trusted origins
+const allowedOrigins = [
+  'http://localhost:5173',  // Vite dev server (primary)
+  'http://localhost:5174',  // Vite dev server (alternate port)
+  'http://localhost:3000',  // Alternative dev port
+  // Add production Vercel URL here after deployment
+  // 'https://your-app.vercel.app'
+];
+
+// CORS configuration with origin validation
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, Postman)
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log(`❌ Blocked origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+};
+
 // Middleware
-app.use(cors());
+app.use(helmet()); // Security headers
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' })); // Increase limit for large transcripts
+
+// Rate limiting configuration
+// Limit: 100 requests per 15 minutes per IP address
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: {
+    error: 'Too many requests',
+    message: 'You have exceeded the 100 requests in 15 minutes limit. Please wait before making more requests.',
+    retryAfter: '15 minutes'
+  },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  handler: (req, res) => {
+    res.status(429).json({
+      error: 'Too many requests',
+      message: 'You have exceeded the 100 requests in 15 minutes limit. Please wait before making more requests.',
+      retryAfter: '15 minutes'
+    });
+  }
+});
+
+// Apply rate limiting to all /api/* routes
+app.use('/api/', apiLimiter);
 
 // In-memory cache for transcripts
 const transcriptCache = new Map();
@@ -343,5 +405,6 @@ function analyzeWordFrequency(words, transcripts) {
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🔒 Security headers enabled (Helmet)`);
   console.log(`📊 Ready to analyze earnings transcripts`);
 });

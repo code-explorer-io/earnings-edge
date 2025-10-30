@@ -11,7 +11,14 @@
       "Bash(node debug_siri.js:*)",
       "Bash(node debug_siri.cjs:*)",
       "Bash(node debug_manufacturing.cjs:*)",
-      "Bash(npm audit:*)"
+      "Bash(npm audit:*)",
+      "Bash(for:*)",
+      "Bash(do echo \"Request $i:\")",
+      "Bash(done)",
+      "Bash(do echo \"=== Request $i ===\")",
+      "Bash(timeout 5 node:*)",
+      "Bash(API_NINJA_KEY= node:*)",
+      "Bash(node test-no-env.js:*)"
     ],
     "deny": [],
     "ask": []
