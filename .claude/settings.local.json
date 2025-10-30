@@ -19,7 +19,8 @@
       "Bash(timeout 5 node:*)",
       "Bash(API_NINJA_KEY= node:*)",
       "Bash(node test-no-env.js:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": []
