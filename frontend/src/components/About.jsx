@@ -1,6 +1,6 @@
 import './About.css';
 
-function About() {
+function About({ onTabChange }) {
   return (
     <div className="about-container">
       <div className="about-header">
@@ -74,14 +74,6 @@ function About() {
               <p>AAA to B ratings indicating reliability of mention patterns</p>
             </div>
             <div className="feature">
-              <h4>📉 Trend Detection</h4>
-              <p>Identify increasing, decreasing, or stable mention patterns</p>
-            </div>
-            <div className="feature">
-              <h4>🎯 Trading Recommendations</h4>
-              <p>BUY, WAIT, or AVOID guidance based on historical data</p>
-            </div>
-            <div className="feature">
               <h4>💰 Profit Calculator</h4>
               <p>Calculate potential returns and compare different positions</p>
             </div>
@@ -144,36 +136,18 @@ function About() {
           </div>
         </div>
 
-        <div className="about-section">
-          <div className="section-icon">💡</div>
-          <h3>Tips for Success</h3>
-          <div className="tips-list">
-            <div className="tip">
-              <strong>1. Look for Consistency:</strong> Words mentioned in 6+ out of 8 quarters are
-              more reliable bets
-            </div>
-            <div className="tip">
-              <strong>2. Check Recent Trends:</strong> A decreasing trend may signal declining relevance
-            </div>
-            <div className="tip">
-              <strong>3. Use Multiple Words:</strong> Analyze related terms to get a fuller picture
-            </div>
-            <div className="tip">
-              <strong>4. Calculate Risk/Reward:</strong> Use the calculator tab to understand your
-              potential profit vs. loss
-            </div>
-            <div className="tip">
-              <strong>5. Consider Context:</strong> Industry trends, product cycles, and company strategy
-              all matter
-            </div>
-          </div>
-        </div>
-
         <div className="about-section cta-section">
           <h3>Ready to Start?</h3>
           <p>
-            Head over to the <strong>Analyze</strong> tab to start researching earnings call mentions,
-            or use the <strong>Calculator</strong> tab to plan your positions.
+            Head over to the{' '}
+            <a href="#" onClick={(e) => { e.preventDefault(); onTabChange('analyze'); }} className="tab-link">
+              Analyze
+            </a>{' '}
+            tab to start researching earnings call mentions, or use the{' '}
+            <a href="#" onClick={(e) => { e.preventDefault(); onTabChange('calculator'); }} className="tab-link">
+              Calculator
+            </a>{' '}
+            tab to plan your positions.
           </p>
         </div>
       </div>

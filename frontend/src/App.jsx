@@ -18,12 +18,14 @@ function App() {
   const [focusedWords, setFocusedWords] = useState([]); // Multi-select array
   const [darkMode, setDarkMode] = useState(true); // Default to dark mode
   const [polymarketData, setPolymarketData] = useState(null); // Store PolyMarket data
+  const [showHighConsistency, setShowHighConsistency] = useState(false); // Filter for 75%+ consistency
 
   const handleAnalyze = async (ticker, words, polymarketData = null) => {
     setLoading(true);
     setError(null);
     setAnalysisResults(null);
     setFocusedWords([]);
+    setShowHighConsistency(false); // Reset filter on new analysis
     setPolymarketData(polymarketData);
 
     try {
@@ -84,13 +86,12 @@ function App() {
     if (!analysisResults) return;
 
     // Prepare CSV data
-    const headers = ['Word', ...analysisResults.analyzedWords[0].quarters.map(q => q.quarter), 'Total', 'Average', 'Trend'];
+    const headers = ['Word', ...analysisResults.analyzedWords[0].quarters.map(q => q.quarter), 'Total', 'Average'];
     const rows = analysisResults.analyzedWords.map(wordData => [
       wordData.word,
       ...wordData.quarters.map(q => q.count),
       wordData.total,
-      wordData.average,
-      wordData.trend
+      wordData.average
     ]);
 
     const csvContent = [
@@ -227,13 +228,64 @@ function App() {
               </div>
             )}
 
+            {/* High Consistency Filter */}
+            {analysisResults.analyzedWords.length > 1 && (() => {
+              const highConsistencyWords = analysisResults.analyzedWords.filter(
+                wordData => parseFloat(wordData.consistencyPercent) >= 75
+              );
+              const count = highConsistencyWords.length;
+
+              return (
+                <div className="high-consistency-filter" style={{
+                  background: darkMode ? '#1e1e1e' : 'white',
+                  padding: '1rem',
+                  borderRadius: '8px',
+                  marginBottom: '1.5rem',
+                  border: darkMode ? '1px solid #444444' : '1px solid #e5e7eb',
+                  boxShadow: darkMode ? '0 2px 4px rgba(0,0,0,0.5)' : '0 2px 4px rgba(0,0,0,0.1)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                    <button
+                      onClick={() => setShowHighConsistency(!showHighConsistency)}
+                      style={{
+                        padding: '0.75rem 1.25rem',
+                        borderRadius: '8px',
+                        border: showHighConsistency ? '2px solid #10b981' : `2px solid ${darkMode ? '#444444' : '#d1d5db'}`,
+                        background: showHighConsistency ? '#10b981' : (darkMode ? '#0a0a0a' : '#fff'),
+                        color: showHighConsistency ? 'white' : (darkMode ? '#E0E0E0' : '#374151'),
+                        cursor: 'pointer',
+                        fontSize: '0.95rem',
+                        fontWeight: '600',
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <span style={{ fontSize: '1.1rem' }}>🟢</span>
+                      <span>{showHighConsistency ? 'Showing' : 'Show'} High Consistency (75%+)</span>
+                    </button>
+                    <span style={{
+                      color: darkMode ? '#B0B0B0' : '#6b7280',
+                      fontSize: '0.9rem',
+                      fontWeight: '500'
+                    }}>
+                      {count} reliable {count === 1 ? 'word' : 'words'} found (6+ out of 8 quarters)
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
+
             <ResultsTable
               data={analysisResults.analyzedWords}
               focusedWords={focusedWords}
+              showHighConsistency={showHighConsistency}
             />
             <QuickStats
               data={analysisResults.analyzedWords}
               focusedWords={focusedWords}
+              showHighConsistency={showHighConsistency}
               onWordClick={handleWordClick}
               polymarketData={polymarketData}
               onCalculate={() => setActiveTab('calculator')}
@@ -241,6 +293,7 @@ function App() {
             <TrendChart
               data={analysisResults.analyzedWords}
               focusedWords={focusedWords}
+              showHighConsistency={showHighConsistency}
             />
           </div>
         )}
@@ -251,7 +304,7 @@ function App() {
         {activeTab === 'calculator' && <Calculator />}
 
         {/* About Tab Content */}
-        {activeTab === 'about' && <About />}
+        {activeTab === 'about' && <About onTabChange={setActiveTab} />}
       </main>
 
       <footer className="app-footer">

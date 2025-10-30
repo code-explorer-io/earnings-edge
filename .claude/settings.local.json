@@ -7,7 +7,11 @@
       "Bash(vercel:*)",
       "Bash(curl:*)",
       "Bash(node -e:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(node debug_siri.js:*)",
+      "Bash(node debug_siri.cjs:*)",
+      "Bash(node debug_manufacturing.cjs:*)",
+      "Bash(npm audit:*)"
     ],
     "deny": [],
     "ask": []

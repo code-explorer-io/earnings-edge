@@ -402,3 +402,30 @@
     margin: 0 auto;
   }
 }
+
+/* Tab Links */
+.tab-link {
+  color: #667eea;
+  font-weight: 700;
+  text-decoration: none;
+  border-bottom: 2px solid #667eea;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  padding-bottom: 2px;
+}
+
+.tab-link:hover {
+  color: #764ba2;
+  border-bottom-color: #764ba2;
+  transform: translateY(-1px);
+}
+
+.dark-mode .tab-link {
+  color: #8b9cff;
+  border-bottom-color: #8b9cff;
+}
+
+.dark-mode .tab-link:hover {
+  color: #a5b4ff;
+  border-bottom-color: #a5b4ff;
+}

@@ -1,12 +1,17 @@
 import './ResultsTable.css';
 
-function ResultsTable({ data, focusedWords }) {
+function ResultsTable({ data, focusedWords, showHighConsistency }) {
   if (!data || data.length === 0) return null;
 
   // Filter data if words are focused (multi-select)
   let displayData = focusedWords && focusedWords.length > 0
     ? data.filter(wordData => focusedWords.includes(wordData.word))
     : data;
+
+  // Filter for high consistency (75%+) if enabled
+  if (showHighConsistency) {
+    displayData = displayData.filter(wordData => parseFloat(wordData.consistencyPercent) >= 75);
+  }
 
   // Sort by Consistency (descending), then by Total mentions (descending) as tiebreaker
   displayData = [...displayData].sort((a, b) => {
@@ -55,9 +60,20 @@ function ResultsTable({ data, focusedWords }) {
             </tr>
           </thead>
           <tbody>
-            {displayData.map((wordData, idx) => (
-              <tr key={idx}>
-                <td className="word-cell">{wordData.word}</td>
+            {displayData.map((wordData, idx) => {
+              const isHighConsistency = parseFloat(wordData.consistencyPercent) >= 75;
+              return (
+              <tr
+                key={idx}
+                className={isHighConsistency ? 'high-consistency-row' : ''}
+                style={{
+                  backgroundColor: isHighConsistency ? 'rgba(16, 185, 129, 0.05)' : 'transparent'
+                }}
+              >
+                <td className="word-cell">
+                  {wordData.word}
+                  {isHighConsistency && <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem' }}>🟢</span>}
+                </td>
                 <td className="traffic-light-cell" title={`${wordData.riskLevel}: ${wordData.consistencyPercent}%`}>
                   <span style={{ fontSize: '2.25rem' }}>{getTrafficLightEmoji(wordData.trafficLight)}</span>
                 </td>
@@ -84,7 +100,8 @@ function ResultsTable({ data, focusedWords }) {
                   <strong>{wordData.bondRating}</strong>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

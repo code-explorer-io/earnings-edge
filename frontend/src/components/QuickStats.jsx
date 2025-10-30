@@ -1,13 +1,18 @@
 import './QuickStats.css';
 import PolyMarketComparison from './PolyMarketComparison';
 
-function QuickStats({ data, focusedWords, onWordClick, polymarketData, onCalculate }) {
+function QuickStats({ data, focusedWords, showHighConsistency, onWordClick, polymarketData, onCalculate }) {
   if (!data || data.length === 0) return null;
 
   // Filter data if words are focused (multi-select)
-  const displayData = focusedWords && focusedWords.length > 0
+  let displayData = focusedWords && focusedWords.length > 0
     ? data.filter(wordData => focusedWords.includes(wordData.word))
     : data;
+
+  // Filter for high consistency (75%+) if enabled
+  if (showHighConsistency) {
+    displayData = displayData.filter(wordData => parseFloat(wordData.consistencyPercent) >= 75);
+  }
 
   const getTrendIcon = (trend) => {
     switch (trend) {

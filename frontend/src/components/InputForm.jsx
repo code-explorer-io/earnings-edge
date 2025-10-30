@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import './InputForm.css';
-import { top100Companies } from '../data/top100Companies';
+import { top100Companies, searchCompanies } from '../data/top100Companies';
 
 function InputForm({ onAnalyze, loading }) {
   const [viewMode, setViewMode] = useState('input'); // 'input' or 'preview'
@@ -10,6 +10,13 @@ function InputForm({ onAnalyze, loading }) {
   const [selectedWords, setSelectedWords] = useState(new Set());
   const [customWord, setCustomWord] = useState('');
   const [validationError, setValidationError] = useState(null);
+
+  // Autocomplete state
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const [filteredCompanies, setFilteredCompanies] = useState([]);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const autocompleteRef = useRef(null);
+  const inputRef = useRef(null);
 
   // Junk words to filter out during extraction
   const junkWords = new Set([
@@ -43,20 +50,98 @@ function InputForm({ onAnalyze, loading }) {
     return company ? company.ticker : input.toUpperCase();
   };
 
+  // Autocomplete: Handle input change
+  const handleCompanyInputChange = (e) => {
+    const value = e.target.value;
+    setCompanyInput(value);
+
+    if (value.trim().length > 0) {
+      const results = searchCompanies(value);
+      setFilteredCompanies(results.slice(0, 10)); // Limit to 10 results
+      setShowAutocomplete(results.length > 0);
+      setSelectedIndex(-1);
+    } else {
+      setShowAutocomplete(false);
+      setFilteredCompanies([]);
+    }
+  };
+
+  // Autocomplete: Select a company
+  const selectCompany = (company) => {
+    setCompanyInput(company.ticker);
+    setShowAutocomplete(false);
+    setFilteredCompanies([]);
+    setSelectedIndex(-1);
+    inputRef.current?.focus();
+  };
+
+  // Autocomplete: Handle keyboard navigation
+  const handleKeyDown = (e) => {
+    if (!showAutocomplete) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedIndex(prev =>
+          prev < filteredCompanies.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedIndex(prev => prev > 0 ? prev - 1 : -1);
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedIndex >= 0 && selectedIndex < filteredCompanies.length) {
+          selectCompany(filteredCompanies[selectedIndex]);
+        } else {
+          setShowAutocomplete(false);
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setShowAutocomplete(false);
+        setSelectedIndex(-1);
+        break;
+      default:
+        break;
+    }
+  };
+
+  // Autocomplete: Click outside to close
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (autocompleteRef.current && !autocompleteRef.current.contains(event.target)) {
+        setShowAutocomplete(false);
+        setSelectedIndex(-1);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   // Smart text extraction
   const extractKeywords = (text) => {
     if (!text || !text.trim()) return [];
 
+    // FIRST: Split on " / " pattern to handle variations (e.g., "Shutdown / Shut Down")
+    // Replace " / " with a unique delimiter that we'll split on later
+    let preprocessed = text.replace(/\s+\/\s+/g, '|||VARIANT|||');
+
     // Remove common symbols and clean text
-    let cleaned = text
+    let cleaned = preprocessed
       .replace(/[$¢%]/g, ' ')  // Remove currency symbols and percent
       .replace(/\d+/g, ' ')    // Remove numbers
-      .replace(/[^\w\s'-]/g, ' ')  // Keep only words, spaces, hyphens, apostrophes
+      .replace(/[^\w\s'\-|]/g, ' ')  // Keep only words, spaces, hyphens, apostrophes, and our delimiter
       .replace(/\s+/g, ' ')    // Normalize whitespace
       .trim();
 
-    // Split by various separators
-    const tokens = cleaned.split(/[,;\n\t]+/);
+    // Split by various separators AND our variant delimiter
+    const tokens = cleaned.split(/[,;\n\t]|(\|\|\|VARIANT\|\|\|)+/)
+      .filter(token => token && token.trim() && token !== '|||VARIANT|||');
 
     const potentialWords = [];
 
@@ -209,17 +294,49 @@ function InputForm({ onAnalyze, loading }) {
           <form onSubmit={(e) => { e.preventDefault(); handleExtractWords(); }}>
             <div className="form-group">
               <label htmlFor="company">Company Ticker or Name:</label>
-              <input
-                type="text"
-                id="company"
-                value={companyInput}
-                onChange={(e) => setCompanyInput(e.target.value)}
-                placeholder="SBUX or Starbucks"
-                disabled={loading}
-                className="full-width-input"
-              />
+              <div className="autocomplete-container" ref={autocompleteRef}>
+                <input
+                  type="text"
+                  id="company"
+                  ref={inputRef}
+                  value={companyInput}
+                  onChange={handleCompanyInputChange}
+                  onKeyDown={handleKeyDown}
+                  placeholder="SBUX or Starbucks"
+                  disabled={loading}
+                  className="full-width-input"
+                  autoComplete="off"
+                />
+                {showAutocomplete && filteredCompanies.length > 0 && (
+                  <div className="autocomplete-dropdown">
+                    {filteredCompanies.map((company, index) => (
+                      <div
+                        key={`${company.ticker}-${index}`}
+                        className={`autocomplete-item ${index === selectedIndex ? 'selected' : ''}`}
+                        onClick={() => selectCompany(company)}
+                        onMouseEnter={() => setSelectedIndex(index)}
+                      >
+                        <span className="company-ticker">{company.ticker}</span>
+                        <span className="company-separator"> - </span>
+                        <span className="company-name">{company.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               <small className="help-text">
-                Examples: SBUX, Starbucks, AAPL, Apple Inc.
+                Start typing to see suggestions (e.g., AAPL, Apple, Tesla)
+              </small>
+              <small className="help-text ticker-search-link">
+                Don't know the ticker?{' '}
+                <a
+                  href="https://finance.yahoo.com/lookup"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="external-link"
+                >
+                  Search here
+                </a>
               </small>
             </div>
 
@@ -321,15 +438,47 @@ function InputForm({ onAnalyze, loading }) {
 
             <div className="form-group">
               <label htmlFor="company-preview">Company:</label>
-              <input
-                type="text"
-                id="company-preview"
-                value={companyInput}
-                onChange={(e) => setCompanyInput(e.target.value)}
-                placeholder="Enter ticker or name (required)"
-                disabled={loading}
-                className="full-width-input"
-              />
+              <div className="autocomplete-container" ref={autocompleteRef}>
+                <input
+                  type="text"
+                  id="company-preview"
+                  ref={inputRef}
+                  value={companyInput}
+                  onChange={handleCompanyInputChange}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Enter ticker or name (required)"
+                  disabled={loading}
+                  className="full-width-input"
+                  autoComplete="off"
+                />
+                {showAutocomplete && filteredCompanies.length > 0 && (
+                  <div className="autocomplete-dropdown">
+                    {filteredCompanies.map((company, index) => (
+                      <div
+                        key={`${company.ticker}-${index}`}
+                        className={`autocomplete-item ${index === selectedIndex ? 'selected' : ''}`}
+                        onClick={() => selectCompany(company)}
+                        onMouseEnter={() => setSelectedIndex(index)}
+                      >
+                        <span className="company-ticker">{company.ticker}</span>
+                        <span className="company-separator"> - </span>
+                        <span className="company-name">{company.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <small className="help-text ticker-search-link">
+                Don't know the ticker?{' '}
+                <a
+                  href="https://finance.yahoo.com/lookup"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="external-link"
+                >
+                  Search here
+                </a>
+              </small>
             </div>
 
             {validationError && (

@@ -20,13 +20,18 @@ ChartJS.register(
   Legend
 );
 
-function TrendChart({ data, focusedWords }) {
+function TrendChart({ data, focusedWords, showHighConsistency }) {
   if (!data || data.length === 0) return null;
 
   // Filter data if words are focused (multi-select)
-  const displayData = focusedWords && focusedWords.length > 0
+  let displayData = focusedWords && focusedWords.length > 0
     ? data.filter(wordData => focusedWords.includes(wordData.word))
     : data;
+
+  // Filter for high consistency (75%+) if enabled
+  if (showHighConsistency) {
+    displayData = displayData.filter(wordData => parseFloat(wordData.consistencyPercent) >= 75);
+  }
 
   // Prepare data for Chart.js
   const labels = data[0].quarters.map(q => q.quarter);
