@@ -18,7 +18,8 @@
       "Bash(do echo \"=== Request $i ===\")",
       "Bash(timeout 5 node:*)",
       "Bash(API_NINJA_KEY= node:*)",
-      "Bash(node test-no-env.js:*)"
+      "Bash(node test-no-env.js:*)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []

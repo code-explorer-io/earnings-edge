@@ -1,17 +1,24 @@
-export default async function handler(req, res) {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+import { applySecurityMiddleware, validateEnvironment } from './_security.js';
 
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+export default async function handler(req, res) {
+  // Apply security middleware (CORS, headers, rate limiting)
+  const securityCheck = applySecurityMiddleware(req, res);
+  if (securityCheck.blocked) {
+    return; // Response already sent by middleware
+  }
+
+  // Validate environment variables
+  const envCheck = validateEnvironment();
+  if (!envCheck.valid) {
+    return res.status(500).json({
+      error: 'Configuration error',
+      message: envCheck.error
+    });
   }
 
   return res.status(200).json({
     status: 'ok',
-    message: 'Server is running'
+    message: 'Server is running',
+    security: 'enabled'
   });
 }

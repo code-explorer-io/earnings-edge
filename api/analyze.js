@@ -1,3 +1,5 @@
+import { applySecurityMiddleware } from './_security.js';
+
 // Helper function to analyze word frequency
 function analyzeWordFrequency(words, transcripts) {
   const results = {};
@@ -169,15 +171,10 @@ function analyzeWordFrequency(words, transcripts) {
 }
 
 export default async function handler(req, res) {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+  // Apply security middleware (CORS, headers, rate limiting)
+  const securityCheck = applySecurityMiddleware(req, res);
+  if (securityCheck.blocked) {
+    return; // Response already sent by middleware
   }
 
   if (req.method !== 'POST') {

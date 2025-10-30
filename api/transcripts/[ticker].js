@@ -1,4 +1,5 @@
 // Using native fetch instead of axios to avoid header encoding issues
+import { applySecurityMiddleware, validateEnvironment } from '../_security.js';
 
 // In-memory cache for transcripts (will persist during function lifetime)
 const transcriptCache = new Map();
@@ -77,19 +78,24 @@ async function fetchLast8Quarters(ticker, apiKey) {
 export default async function handler(req, res) {
   console.log('🚀 Transcripts API called:', req.query);
 
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+  // Apply security middleware (CORS, headers, rate limiting)
+  const securityCheck = applySecurityMiddleware(req, res);
+  if (securityCheck.blocked) {
+    return; // Response already sent by middleware
   }
 
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Validate environment variables
+  const envCheck = validateEnvironment();
+  if (!envCheck.valid) {
+    console.error('❌ API key not configured');
+    return res.status(500).json({
+      error: 'Configuration error',
+      message: envCheck.error
+    });
   }
 
   try {
@@ -106,16 +112,6 @@ export default async function handler(req, res) {
 
     // API Ninja endpoint for earnings transcripts
     const apiKey = process.env.API_NINJA_KEY;
-
-    console.log(`🔑 API Key present: ${!!apiKey}, length: ${apiKey?.length}`);
-
-    if (!apiKey || apiKey === 'your_api_key_here') {
-      console.error('❌ API key not configured');
-      return res.status(500).json({
-        error: 'API key not configured',
-        message: 'Please configure API_NINJA_KEY in Vercel environment variables'
-      });
-    }
 
     console.log(`📡 Fetching transcripts for ${cacheKey} from API Ninjas...`);
 
