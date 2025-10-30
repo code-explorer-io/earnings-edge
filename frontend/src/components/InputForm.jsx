@@ -1,200 +1,362 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import './InputForm.css';
-import { searchCompanies } from '../data/top100Companies';
+import { top100Companies } from '../data/top100Companies';
 
 function InputForm({ onAnalyze, loading }) {
-  const [ticker, setTicker] = useState('');
-  const [wordsInput, setWordsInput] = useState('');
-  const [wordTags, setWordTags] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [filteredCompanies, setFilteredCompanies] = useState([]);
-  const dropdownRef = useRef(null);
+  const [viewMode, setViewMode] = useState('input'); // 'input' or 'preview'
+  const [companyInput, setCompanyInput] = useState('');
+  const [textInput, setTextInput] = useState('');
+  const [extractedWords, setExtractedWords] = useState([]);
+  const [selectedWords, setSelectedWords] = useState(new Set());
+  const [customWord, setCustomWord] = useState('');
+  const [validationError, setValidationError] = useState(null);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowDropdown(false);
+  // Junk words to filter out during extraction
+  const junkWords = new Set([
+    // UI/PolyMarket terms
+    'outcome', 'chance', 'buy', 'yes', 'no', 'vol', 'volume', 'price', 'market',
+    'traders', 'trade', 'trading', 'event', 'question', 'outcome', 'ends',
+    // Common English words
+    'the', 'and', 'or', 'of', 'to', 'in', 'a', 'is', 'it', 'on', 'for', 'with',
+    'as', 'by', 'at', 'from', 'be', 'this', 'that', 'will', 'their', 'has',
+    'have', 'was', 'were', 'been', 'are', 'an', 'but', 'if', 'can', 'not',
+    // Time/date
+    'today', 'tomorrow', 'yesterday', 'week', 'month', 'year', 'day', 'time',
+    'date', 'hours', 'minutes', 'seconds',
+    // Other
+    'during', 'when', 'where', 'what', 'who', 'how', 'why', 'which', 'there',
+    'here', 'then', 'than', 'them', 'these', 'those', 'such', 'some', 'any',
+    'all', 'both', 'each', 'few', 'more', 'most', 'other', 'another', 'much',
+    'many', 'said', 'says', 'say', 'call', 'called', 'calls'
+  ]);
+
+  // Whitelist for short words that should be kept
+  const shortWordWhitelist = new Set(['ai', 'ar', 'vr', 'ip', 'io', 'ceo', 'cfo', 'cto']);
+
+  // Convert company name to ticker
+  const convertNameToTicker = (input) => {
+    const searchTerm = input.toLowerCase().trim();
+    const company = top100Companies.find(c =>
+      c.name.toLowerCase() === searchTerm ||
+      c.ticker.toLowerCase() === searchTerm
+    );
+    return company ? company.ticker : input.toUpperCase();
+  };
+
+  // Smart text extraction
+  const extractKeywords = (text) => {
+    if (!text || !text.trim()) return [];
+
+    // Remove common symbols and clean text
+    let cleaned = text
+      .replace(/[$¢%]/g, ' ')  // Remove currency symbols and percent
+      .replace(/\d+/g, ' ')    // Remove numbers
+      .replace(/[^\w\s'-]/g, ' ')  // Keep only words, spaces, hyphens, apostrophes
+      .replace(/\s+/g, ' ')    // Normalize whitespace
+      .trim();
+
+    // Split by various separators
+    const tokens = cleaned.split(/[,;\n\t]+/);
+
+    const potentialWords = [];
+
+    for (let token of tokens) {
+      token = token.trim();
+      if (!token) continue;
+
+      // Split token by spaces to get individual words and multi-word phrases
+      const words = token.split(/\s+/);
+
+      // Check for multi-word phrases (consecutive capitalized words)
+      let i = 0;
+      while (i < words.length) {
+        const word = words[i];
+
+        // Skip if too short (unless whitelisted)
+        const wordLower = word.toLowerCase();
+        if (word.length < 3 && !shortWordWhitelist.has(wordLower)) {
+          i++;
+          continue;
+        }
+
+        // Skip junk words
+        if (junkWords.has(wordLower)) {
+          i++;
+          continue;
+        }
+
+        // Check if this starts a multi-word phrase
+        if (i < words.length - 1 &&
+            word[0] === word[0].toUpperCase() &&
+            words[i + 1][0] === words[i + 1][0].toUpperCase()) {
+          // Potential multi-word phrase
+          let phrase = word;
+          let j = i + 1;
+          while (j < words.length &&
+                 words[j][0] === words[j][0].toUpperCase() &&
+                 !junkWords.has(words[j].toLowerCase()) &&
+                 j - i < 4) { // Limit phrase length to 4 words
+            phrase += ' ' + words[j];
+            j++;
+          }
+          if (j > i + 1) {
+            potentialWords.push(phrase);
+            i = j;
+            continue;
+          }
+        }
+
+        // Single word - keep if it looks like a proper noun or keyword
+        if (word[0] === word[0].toUpperCase() || wordLower === word.toUpperCase()) {
+          potentialWords.push(word);
+        }
+
+        i++;
       }
-    };
+    }
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    // Remove duplicates while preserving order
+    return [...new Set(potentialWords)];
+  };
 
-  // Handle search input change
-  const handleSearchChange = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
+  // Handle extract & preview
+  const handleExtractWords = () => {
+    setValidationError(null);
 
-    if (query.trim().length > 0) {
-      const results = searchCompanies(query);
-      setFilteredCompanies(results);
-      setShowDropdown(true);
+    if (!textInput.trim()) {
+      setValidationError('Please enter text or words to track');
+      return;
+    }
+
+    const words = extractKeywords(textInput);
+
+    if (words.length === 0) {
+      setValidationError('No tracking words detected. Try typing them manually, one per line or comma-separated.');
+      return;
+    }
+
+    setExtractedWords(words);
+    setSelectedWords(new Set(words)); // Select all by default
+    setViewMode('preview');
+  };
+
+  // Toggle word selection
+  const toggleWord = (word) => {
+    const newSelected = new Set(selectedWords);
+    if (newSelected.has(word)) {
+      newSelected.delete(word);
     } else {
-      setFilteredCompanies([]);
-      setShowDropdown(false);
+      newSelected.add(word);
     }
+    setSelectedWords(newSelected);
   };
 
-  // Handle company selection from dropdown
-  const handleCompanySelect = (company) => {
-    setTicker(company.ticker);
-    setSearchQuery(company.name);
-    setShowDropdown(false);
-  };
+  // Select/deselect all
+  const selectAll = () => setSelectedWords(new Set(extractedWords));
+  const clearAll = () => setSelectedWords(new Set());
 
-  // Handle adding word tags
-  const handleWordsInputChange = (e) => {
-    const value = e.target.value;
-    setWordsInput(value);
+  // Add custom word
+  const handleAddCustomWord = () => {
+    const word = customWord.trim();
+    if (!word) return;
 
-    // Auto-detect comma-separated entries and convert to tags
-    if (value.includes(',')) {
-      const newWords = value
-        .split(',')
-        .map(word => word.trim())
-        .map(word => word.replace(/\s+/g, ' '))
-        .filter(word => word.length > 0 && !wordTags.includes(word));
-
-      if (newWords.length > 0) {
-        setWordTags([...wordTags, ...newWords]);
-        setWordsInput('');
-      }
+    if (!extractedWords.includes(word)) {
+      setExtractedWords([...extractedWords, word]);
     }
+    setSelectedWords(new Set([...selectedWords, word]));
+    setCustomWord('');
   };
 
-  // Handle adding a word tag on Enter or blur
-  const handleWordsInputKeyDown = (e) => {
-    if (e.key === 'Enter' && wordsInput.trim()) {
-      e.preventDefault();
-      const cleanWord = wordsInput.trim().replace(/\s+/g, ' ');
-      if (!wordTags.includes(cleanWord)) {
-        setWordTags([...wordTags, cleanWord]);
-      }
-      setWordsInput('');
-    } else if (e.key === 'Backspace' && !wordsInput && wordTags.length > 0) {
-      // Remove last tag when backspace is pressed on empty input
-      setWordTags(wordTags.slice(0, -1));
-    }
-  };
+  // Handle final analysis
+  const handleAnalyze = () => {
+    setValidationError(null);
 
-  // Handle removing a word tag
-  const removeWordTag = (indexToRemove) => {
-    setWordTags(wordTags.filter((_, index) => index !== indexToRemove));
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    // Add any remaining input as a tag
-    if (wordsInput.trim()) {
-      const cleanWord = wordsInput.trim().replace(/\s+/g, ' ');
-      if (!wordTags.includes(cleanWord)) {
-        wordTags.push(cleanWord);
-      }
-    }
-
-    if (wordTags.length === 0) {
-      alert('Please enter at least one word to track');
+    if (selectedWords.size === 0) {
+      setValidationError('Please select at least one word to track');
       return;
     }
 
-    // Use ticker if selected from dropdown, otherwise use searchQuery (for direct ticker entry)
-    const finalTicker = ticker.trim() || searchQuery.trim().toUpperCase();
-
-    if (!finalTicker) {
-      alert('Please enter a ticker symbol or select a company');
+    if (!companyInput.trim()) {
+      setValidationError('Please enter a company ticker or name');
       return;
     }
 
-    onAnalyze(finalTicker, wordTags);
+    const finalTicker = convertNameToTicker(companyInput);
+    const words = Array.from(selectedWords);
+
+    onAnalyze(finalTicker, words, null);
   };
+
+  // Back to edit
+  const handleBackToEdit = () => {
+    setViewMode('input');
+    setValidationError(null);
+  };
+
+  const charCount = textInput.length;
+  const charLimit = 5000;
 
   return (
     <div className="input-form-container">
-      <form onSubmit={handleSubmit} className="input-form">
-        <div className="form-group" ref={dropdownRef}>
-          <label htmlFor="ticker">Company Ticker</label>
-          <div className="ticker-input-wrapper">
-            <input
-              type="text"
-              id="ticker-search"
-              value={searchQuery}
-              onChange={handleSearchChange}
-              onFocus={() => searchQuery && setShowDropdown(true)}
-              placeholder="Search by company name or ticker (e.g., Apple, SBUX)"
-              disabled={loading}
-              className="ticker-input"
-            />
-            {showDropdown && filteredCompanies.length > 0 && (
-              <div className="autocomplete-dropdown">
-                {filteredCompanies.slice(0, 10).map((company) => (
-                  <div
-                    key={company.ticker}
-                    className="autocomplete-item"
-                    onClick={() => handleCompanySelect(company)}
-                  >
-                    <div className="company-info">
-                      <span className="company-name">{company.name}</span>
-                      <span className="company-ticker">{company.ticker}</span>
-                    </div>
-                    <div className="company-sector">{company.sector}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-            {showDropdown && searchQuery && filteredCompanies.length === 0 && (
-              <div className="autocomplete-dropdown">
-                <div className="autocomplete-item no-results">
-                  No companies found. You can enter a ticker directly.
-                </div>
-              </div>
-            )}
+      {viewMode === 'input' ? (
+        // INPUT MODE
+        <div className="input-mode">
+          <div className="form-header">
+            <span className="form-icon">📝</span>
+            <h3>ANALYZE EARNINGS MENTIONS</h3>
           </div>
-          <small className="help-text">
-            {ticker ? `Selected: ${ticker}` : 'Start typing to search from top 100 US companies'}
-          </small>
-        </div>
 
-        <div className="form-group">
-          <label htmlFor="words">Words to Track</label>
-          <div className="tag-input-container">
-            {wordTags.map((tag, index) => (
-              <div key={index} className="word-tag">
-                <span className="tag-text">{tag}</span>
-                <button
-                  type="button"
-                  className="tag-remove"
-                  onClick={() => removeWordTag(index)}
+          <form onSubmit={(e) => { e.preventDefault(); handleExtractWords(); }}>
+            <div className="form-group">
+              <label htmlFor="company">Company Ticker or Name:</label>
+              <input
+                type="text"
+                id="company"
+                value={companyInput}
+                onChange={(e) => setCompanyInput(e.target.value)}
+                placeholder="SBUX or Starbucks"
+                disabled={loading}
+                className="full-width-input"
+              />
+              <small className="help-text">
+                Examples: SBUX, Starbucks, AAPL, Apple Inc.
+              </small>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="text-input">Paste text from PolyMarket or enter words:</label>
+              <textarea
+                id="text-input"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                placeholder={`You can paste messy text from PolyMarket:\n"Foundry 99¢ Holiday Protein $36 Vol..."\n\nOR just type words:\nHoliday, Protein, Canada\n\nOR one per line:\nHoliday\nProtein\nCanada`}
+                disabled={loading}
+                className="text-input-area"
+                rows={8}
+                maxLength={charLimit}
+              />
+              <div className="textarea-footer">
+                <small className="help-text">
+                  Paste any text - we'll extract the keywords automatically
+                </small>
+                <small className="char-count" style={{ color: charCount > charLimit * 0.9 ? '#ef4444' : '#6b7280' }}>
+                  {charCount}/{charLimit}
+                </small>
+              </div>
+            </div>
+
+            {validationError && (
+              <div className="error-box">
+                ⚠️ {validationError}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading || !textInput.trim()}
+              className="extract-btn"
+            >
+              🔍 Extract & Preview Words
+            </button>
+          </form>
+        </div>
+      ) : (
+        // PREVIEW MODE
+        <div className="preview-mode">
+          <div className="form-header">
+            <span className="form-icon">✓</span>
+            <h3>FOUND {extractedWords.length} POTENTIAL WORD{extractedWords.length !== 1 ? 'S' : ''}</h3>
+          </div>
+
+          <div className="preview-content">
+            <p className="preview-instructions">
+              Select words to analyze ({selectedWords.size} selected):
+            </p>
+
+            <div className="words-checklist">
+              {extractedWords.map((word, idx) => (
+                <label key={idx} className="word-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={selectedWords.has(word)}
+                    onChange={() => toggleWord(word)}
+                    disabled={loading}
+                  />
+                  <span className="checkbox-label">{word}</span>
+                </label>
+              ))}
+            </div>
+
+            <div className="selection-controls">
+              <button onClick={selectAll} className="control-btn" disabled={loading}>
+                ✓ Select All
+              </button>
+              <button onClick={clearAll} className="control-btn" disabled={loading}>
+                ✗ Clear All
+              </button>
+            </div>
+
+            <div className="custom-word-section">
+              <label htmlFor="custom-word">Add custom word:</label>
+              <div className="custom-word-input">
+                <input
+                  type="text"
+                  id="custom-word"
+                  value={customWord}
+                  onChange={(e) => setCustomWord(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCustomWord())}
+                  placeholder="Type a word..."
                   disabled={loading}
-                  aria-label={`Remove ${tag}`}
+                  className="custom-input"
+                />
+                <button
+                  onClick={handleAddCustomWord}
+                  disabled={loading || !customWord.trim()}
+                  className="add-btn"
                 >
-                  ×
+                  + Add
                 </button>
               </div>
-            ))}
-            <input
-              type="text"
-              id="words"
-              value={wordsInput}
-              onChange={handleWordsInputChange}
-              onKeyDown={handleWordsInputKeyDown}
-              placeholder={wordTags.length === 0 ? "Type words and press Enter or comma (e.g., holiday, protein)" : "Add more words..."}
-              disabled={loading}
-              className="tag-input"
-            />
-          </div>
-          <small className="help-text">
-            Press Enter or use commas to add words. Multi-word phrases supported (e.g., "smart queue")
-          </small>
-        </div>
+            </div>
 
-        <button type="submit" disabled={loading} className="analyze-btn">
-          {loading ? '🔄 Analyzing...' : '🔍 Analyze Transcripts'}
-        </button>
-      </form>
+            <div className="form-group">
+              <label htmlFor="company-preview">Company:</label>
+              <input
+                type="text"
+                id="company-preview"
+                value={companyInput}
+                onChange={(e) => setCompanyInput(e.target.value)}
+                placeholder="Enter ticker or name (required)"
+                disabled={loading}
+                className="full-width-input"
+              />
+            </div>
+
+            {validationError && (
+              <div className="error-box">
+                ⚠️ {validationError}
+              </div>
+            )}
+
+            <div className="preview-actions">
+              <button
+                onClick={handleBackToEdit}
+                className="back-btn"
+                disabled={loading}
+              >
+                ← Back to Edit
+              </button>
+              <button
+                onClick={handleAnalyze}
+                className="analyze-btn"
+                disabled={loading || selectedWords.size === 0}
+              >
+                {loading ? '🔄 Analyzing...' : `Analyze Selected Words →`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

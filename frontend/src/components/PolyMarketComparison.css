@@ -1,0 +1,259 @@
+.polymarket-comparison {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 2px solid #0ea5e9;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+  box-shadow: 0 4px 6px rgba(14, 165, 233, 0.1);
+}
+
+.dark-mode .polymarket-comparison {
+  background: linear-gradient(135deg, #0a1929 0%, #0f2540 100%);
+  border-color: #0ea5e9;
+  box-shadow: 0 4px 6px rgba(14, 165, 233, 0.2);
+}
+
+.comparison-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #e0f2fe;
+}
+
+.dark-mode .comparison-header {
+  border-bottom-color: #1e3a5f;
+}
+
+.comparison-icon {
+  font-size: 1.5rem;
+}
+
+.comparison-header h4 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #0369a1;
+}
+
+.dark-mode .comparison-header h4 {
+  color: #38bdf8;
+}
+
+.comparison-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Market Stats */
+.market-stats {
+  background: white;
+  border-radius: 8px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dark-mode .market-stats {
+  background: #132337;
+  border: 1px solid #2a3f5f;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.dark-mode .stat-row {
+  border-bottom-color: #2a3f5f;
+}
+
+.stat-row:last-child {
+  border-bottom: none;
+}
+
+.stat-label {
+  font-weight: 600;
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+.dark-mode .stat-label {
+  color: #9ca3af;
+}
+
+.stat-value {
+  font-weight: 600;
+  color: #374151;
+  font-size: 1rem;
+}
+
+.dark-mode .stat-value {
+  color: #E0E0E0;
+}
+
+.price-yes {
+  color: #10b981;
+  font-weight: 700;
+}
+
+.price-no {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+.market-link {
+  color: #0ea5e9;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.market-link:hover {
+  color: #0284c7;
+  text-decoration: underline;
+}
+
+/* Market Analysis */
+.market-analysis {
+  background: white;
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.dark-mode .market-analysis {
+  background: #132337;
+  border: 1px solid #2a3f5f;
+}
+
+.market-analysis h5 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #374151;
+}
+
+.dark-mode .market-analysis h5 {
+  color: #E0E0E0;
+}
+
+.analysis-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.analysis-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.analysis-label {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.dark-mode .analysis-label {
+  color: #9ca3af;
+}
+
+.analysis-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.dark-mode .analysis-value {
+  color: #E0E0E0;
+}
+
+.analysis-value.highlight {
+  color: #0ea5e9;
+  font-weight: 700;
+}
+
+/* Recommendation Box */
+.recommendation-box {
+  background: white;
+  border-left: 4px solid #f59e0b;
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.dark-mode .recommendation-box {
+  background: #132337;
+  border: 1px solid #2a3f5f;
+  border-left-width: 4px;
+}
+
+.recommendation-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 1.1rem;
+}
+
+.recommendation-icon {
+  font-size: 1.3rem;
+}
+
+.recommendation-text {
+  color: #6b7280;
+  line-height: 1.6;
+  margin: 0 0 1rem 0;
+  font-size: 0.95rem;
+}
+
+.dark-mode .recommendation-text {
+  color: #B0B0B0;
+}
+
+.calculate-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 0.5rem;
+}
+
+.calculate-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .polymarket-comparison {
+    padding: 1.25rem;
+  }
+
+  .comparison-header h4 {
+    font-size: 1.1rem;
+  }
+
+  .analysis-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .market-stats,
+  .market-analysis,
+  .recommendation-box {
+    padding: 1rem;
+  }
+}

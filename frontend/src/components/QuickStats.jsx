@@ -1,6 +1,7 @@
 import './QuickStats.css';
+import PolyMarketComparison from './PolyMarketComparison';
 
-function QuickStats({ data, focusedWords, onWordClick }) {
+function QuickStats({ data, focusedWords, onWordClick, polymarketData, onCalculate }) {
   if (!data || data.length === 0) return null;
 
   // Filter data if words are focused (multi-select)
@@ -196,6 +197,16 @@ function QuickStats({ data, focusedWords, onWordClick }) {
                 <span className="stat-value">{wordData.mentionRate}% of quarters</span>
               </div>
             </div>
+
+            {/* PolyMarket Comparison */}
+            {polymarketData && polymarketData.words.includes(wordData.word) && (
+              <PolyMarketComparison
+                word={wordData.word}
+                consistencyScore={wordData.consistencyPercent}
+                polymarketData={polymarketData}
+                onCalculate={onCalculate}
+              />
+            )}
           </div>
         ))}
       </div>

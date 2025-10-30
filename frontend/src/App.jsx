@@ -17,12 +17,14 @@ function App() {
   const [analysisResults, setAnalysisResults] = useState(null);
   const [focusedWords, setFocusedWords] = useState([]); // Multi-select array
   const [darkMode, setDarkMode] = useState(true); // Default to dark mode
+  const [polymarketData, setPolymarketData] = useState(null); // Store PolyMarket data
 
-  const handleAnalyze = async (ticker, words) => {
+  const handleAnalyze = async (ticker, words, polymarketData = null) => {
     setLoading(true);
     setError(null);
     setAnalysisResults(null);
     setFocusedWords([]);
+    setPolymarketData(polymarketData);
 
     try {
       // Step 1: Fetch transcripts
@@ -233,6 +235,8 @@ function App() {
               data={analysisResults.analyzedWords}
               focusedWords={focusedWords}
               onWordClick={handleWordClick}
+              polymarketData={polymarketData}
+              onCalculate={() => setActiveTab('calculator')}
             />
             <TrendChart
               data={analysisResults.analyzedWords}
