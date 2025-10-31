@@ -139,24 +139,10 @@ function InputForm({ onAnalyze, loading }) {
 
     for (let line of lines) {
       // Remove common symbols and clean text
+      // KEEP ALL NUMBERS during cleaning - we'll filter standalone ones later
       let cleaned = line
         .replace(/[$¢%]/g, ' ')  // Remove currency symbols and percent
-        .replace(/\b\d+\b/g, (match, offset, string) => {
-          // Keep numbers if they're part of a phrase (preceded by a letter or followed by a letter)
-          // e.g., "Windows 10", "RTX 6000", but remove standalone numbers like "88", "123"
-          const before = string[offset - 1];
-          const after = string[offset + match.length];
-          const hasLetterBefore = before && /[a-zA-Z]/.test(before);
-          const hasLetterAfter = after && /[a-zA-Z]/.test(after);
-
-          // Keep the number if it has a letter before or after (part of a phrase)
-          if (hasLetterBefore || hasLetterAfter) {
-            return match;
-          }
-          // Remove standalone numbers
-          return ' ';
-        })
-        .replace(/[^\w\s'\-|]/g, ' ')  // Keep only words, spaces, hyphens, apostrophes, and our delimiter
+        .replace(/[^\w\s'\-|]/g, ' ')  // Keep only words, numbers, spaces, hyphens, apostrophes, and our delimiter
         .replace(/\s+/g, ' ')    // Normalize whitespace
         .trim();
 
@@ -235,7 +221,8 @@ function InputForm({ onAnalyze, loading }) {
         }
 
         // Single word - keep if it looks like a proper noun or keyword
-        if (startsWithCapital || wordLower === word.toUpperCase()) {
+        // BUT skip standalone numbers (not part of a phrase)
+        if ((startsWithCapital || wordLower === word.toUpperCase()) && !isNumber) {
           potentialWords.push(word);
         }
 
