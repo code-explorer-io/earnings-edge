@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './App.css';
 import InputForm from './components/InputForm';
 import ResultsTable from './components/ResultsTable';
@@ -6,6 +6,15 @@ import TrendChart from './components/TrendChart';
 import QuickStats from './components/QuickStats';
 import Calculator from './components/Calculator';
 import About from './components/About';
+import CreditCounter from './components/CreditCounter';
+import CreditWarningModal from './components/CreditWarningModal';
+import {
+  initializeCreditSystem,
+  deductCredits,
+  getCurrentCredits,
+  getCreditStatus,
+  checkAndRefreshDailyCredits
+} from './utils/creditManager';
 
 // Use environment variable for API URL, fallback to production API, or localhost for dev
 const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.MODE === 'production' ? '/api' : 'http://localhost:3001/api');
@@ -20,7 +29,35 @@ function App() {
   const [polymarketData, setPolymarketData] = useState(null); // Store PolyMarket data
   const [showHighConsistency, setShowHighConsistency] = useState(false); // Filter for 75%+ consistency
 
+  // Credit system state
+  const [credits, setCredits] = useState(0);
+  const [showModal, setShowModal] = useState(false);
+  const [modalType, setModalType] = useState(null); // 'welcome', 'low-credits', 'no-credits'
+
+  // Initialize credit system on mount
+  useEffect(() => {
+    const creditInfo = initializeCreditSystem();
+    setCredits(creditInfo.credits);
+
+    // Show welcome modal for new users
+    if (creditInfo.isNewUser) {
+      setModalType('welcome');
+      setShowModal(true);
+    }
+
+    // Check for daily refresh
+    checkAndRefreshDailyCredits();
+  }, []);
+
   const handleAnalyze = async (ticker, words, polymarketData = null) => {
+    // Check if user has enough credits
+    const currentCredits = getCurrentCredits();
+    if (currentCredits < 1) {
+      setModalType('no-credits');
+      setShowModal(true);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setAnalysisResults(null);
@@ -60,6 +97,20 @@ function App() {
       const analysisData = await analysisResponse.json();
       setAnalysisResults(analysisData);
 
+      // Deduct credit after successful analysis
+      const deductionResult = deductCredits(1);
+      if (deductionResult.success) {
+        setCredits(deductionResult.remainingCredits);
+
+        // Show low credit warning if they have 2 or fewer credits left
+        if (deductionResult.remainingCredits <= 2 && deductionResult.remainingCredits > 0) {
+          setTimeout(() => {
+            setModalType('low-credits');
+            setShowModal(true);
+          }, 1000); // Delay so they see results first
+        }
+      }
+
     } catch (err) {
       const errorMessage = err.message || 'An unexpected error occurred';
       setError(errorMessage);
@@ -67,6 +118,11 @@ function App() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle credit updates from CreditCounter
+  const handleCreditUpdate = (newCredits, status) => {
+    setCredits(newCredits);
   };
 
   const handleWordClick = (word) => {
@@ -112,16 +168,34 @@ function App() {
   return (
     <div className={`app ${darkMode ? 'dark-mode' : ''}`}>
       <header className="app-header">
-        <button
-          className="theme-toggle"
-          onClick={() => setDarkMode(!darkMode)}
-          title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-        >
-          {darkMode ? '☀️' : '🌙'}
-        </button>
-        <h1>⚡ EarningsEdge</h1>
-        <p className="subtitle">Analyze word frequency trends in earnings calls for PolyMarket insights</p>
+        <div className="header-left">
+          <button
+            className="theme-toggle"
+            onClick={() => setDarkMode(!darkMode)}
+            title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            {darkMode ? '☀️' : '🌙'}
+          </button>
+        </div>
+        <div className="header-center">
+          <h1>⚡ EarningsEdge</h1>
+          <p className="subtitle">Analyze word frequency trends in earnings calls for PolyMarket insights</p>
+        </div>
+        <div className="header-right">
+          <CreditCounter
+            onCreditUpdate={handleCreditUpdate}
+            darkMode={darkMode}
+          />
+        </div>
       </header>
+
+      {/* Credit Warning Modal */}
+      <CreditWarningModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        warningType={modalType}
+        darkMode={darkMode}
+      />
 
       {/* Tab Navigation */}
       <nav className="tabs-container">

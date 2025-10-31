@@ -45,15 +45,33 @@
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   padding: 2rem 1rem;
-  text-align: center;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.header-left {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+}
+
+.header-center {
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+}
+
+.header-right {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
 }
 
 .theme-toggle {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
   background: rgba(255, 255, 255, 0.2);
   border: 2px solid rgba(255, 255, 255, 0.3);
   color: white;
@@ -72,6 +90,34 @@
 .theme-toggle:hover {
   background: rgba(255, 255, 255, 0.3);
   transform: scale(1.1) rotate(15deg);
+}
+
+/* Responsive header */
+@media (max-width: 768px) {
+  .app-header {
+    flex-wrap: wrap;
+    padding: 1.5rem 1rem;
+  }
+
+  .header-left {
+    order: 1;
+  }
+
+  .header-right {
+    order: 2;
+  }
+
+  .header-center {
+    order: 3;
+    flex: 1 1 100%;
+    margin-top: 1rem;
+  }
+
+  .theme-toggle {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
 }
 
 .app-header h1 {
