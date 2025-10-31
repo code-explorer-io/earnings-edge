@@ -4,7 +4,9 @@
 const ALLOWED_ORIGINS = [
   'https://my-first-project-five-delta.vercel.app',
   'https://my-first-project-sean-mccloskeys-projects.vercel.app',
-  'https://my-first-project-seanmccloskey10-4109-sean-mccloskeys-projects.vercel.app'
+  'https://my-first-project-seanmccloskey10-4109-sean-mccloskeys-projects.vercel.app',
+  'https://earningsedge.io',
+  'https://www.earningsedge.io'
 ];
 
 // Rate limiting - in-memory store (resets when function cold starts)
