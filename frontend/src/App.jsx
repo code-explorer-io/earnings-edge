@@ -45,10 +45,13 @@ function App() {
     const creditInfo = initializeCreditSystem();
     setCredits(creditInfo.credits);
 
-    // Show welcome modal for new users
-    if (creditInfo.isNewUser) {
+    // Show welcome modal for ALL users on first visit
+    // Check if they've seen the credit system intro
+    const hasSeenIntro = localStorage.getItem('earningsEdgeSeenIntro');
+    if (!hasSeenIntro) {
       setModalType('welcome');
       setShowModal(true);
+      localStorage.setItem('earningsEdgeSeenIntro', 'true');
     }
 
     // Check for daily refresh
@@ -235,18 +238,18 @@ function App() {
           <span className="tab-label">Calculator</span>
         </button>
         <button
-          className={`tab ${activeTab === 'credits-info' ? 'active' : ''}`}
-          onClick={() => setActiveTab('credits-info')}
-        >
-          <span className="tab-icon">⚡</span>
-          <span className="tab-label">How Credits Work</span>
-        </button>
-        <button
           className={`tab ${activeTab === 'about' ? 'active' : ''}`}
           onClick={() => setActiveTab('about')}
         >
           <span className="tab-icon">📖</span>
           <span className="tab-label">About</span>
+        </button>
+        <button
+          className={`tab ${activeTab === 'credits-info' ? 'active' : ''}`}
+          onClick={() => setActiveTab('credits-info')}
+        >
+          <span className="tab-icon">⚡</span>
+          <span className="tab-label">How Credits Work</span>
         </button>
       </nav>
 
