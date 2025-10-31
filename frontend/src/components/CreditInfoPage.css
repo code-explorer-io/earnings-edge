@@ -1,0 +1,67 @@
+.credit-info-page {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.credit-info-container {
+  animation: slideUp 0.4s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tier-card {
+  transition: all 0.3s ease;
+}
+
+.tier-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+details summary {
+  transition: all 0.2s ease;
+}
+
+details summary:hover {
+  opacity: 0.8;
+}
+
+details[open] summary {
+  margin-bottom: 0.5rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .credit-info-page {
+    padding: 1rem;
+  }
+
+  .credit-info-container {
+    padding: 1.5rem;
+  }
+
+  .info-header h1 {
+    font-size: 2rem;
+  }
+
+  .tier-card {
+    padding: 1rem;
+  }
+}

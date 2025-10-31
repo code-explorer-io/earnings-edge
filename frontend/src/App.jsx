@@ -8,6 +8,8 @@ import Calculator from './components/Calculator';
 import About from './components/About';
 import CreditCounter from './components/CreditCounter';
 import CreditWarningModal from './components/CreditWarningModal';
+import CreditInfoPage from './components/CreditInfoPage';
+import Toast from './components/Toast';
 import {
   initializeCreditSystem,
   deductCredits,
@@ -15,12 +17,13 @@ import {
   getCreditStatus,
   checkAndRefreshDailyCredits
 } from './utils/creditManager';
+import { initializeAdminHelpers } from './utils/adminHelpers';
 
 // Use environment variable for API URL, fallback to production API, or localhost for dev
 const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.MODE === 'production' ? '/api' : 'http://localhost:3001/api');
 
 function App() {
-  const [activeTab, setActiveTab] = useState('analyze'); // 'analyze', 'calculator', 'about'
+  const [activeTab, setActiveTab] = useState('analyze'); // 'analyze', 'calculator', 'about', 'credits-info'
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [analysisResults, setAnalysisResults] = useState(null);
@@ -33,6 +36,9 @@ function App() {
   const [credits, setCredits] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState(null); // 'welcome', 'low-credits', 'no-credits'
+
+  // Toast notification state
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'info' });
 
   // Initialize credit system on mount
   useEffect(() => {
@@ -47,7 +53,15 @@ function App() {
 
     // Check for daily refresh
     checkAndRefreshDailyCredits();
+
+    // Initialize admin helpers (dev mode only)
+    initializeAdminHelpers();
   }, []);
+
+  // Show toast notification
+  const showToast = (message, type = 'info', duration = 3000) => {
+    setToast({ visible: true, message, type, duration });
+  };
 
   const handleAnalyze = async (ticker, words, polymarketData = null) => {
     // Check if user has enough credits
@@ -102,12 +116,19 @@ function App() {
       if (deductionResult.success) {
         setCredits(deductionResult.remainingCredits);
 
+        // Show toast notification
+        showToast(
+          `Credit used - ${deductionResult.remainingCredits} remaining`,
+          'credit',
+          3000
+        );
+
         // Show low credit warning if they have 2 or fewer credits left
         if (deductionResult.remainingCredits <= 2 && deductionResult.remainingCredits > 0) {
           setTimeout(() => {
             setModalType('low-credits');
             setShowModal(true);
-          }, 1000); // Delay so they see results first
+          }, 2000); // Delay so they see results and toast first
         }
       }
 
@@ -212,6 +233,13 @@ function App() {
         >
           <span className="tab-icon">💰</span>
           <span className="tab-label">Calculator</span>
+        </button>
+        <button
+          className={`tab ${activeTab === 'credits-info' ? 'active' : ''}`}
+          onClick={() => setActiveTab('credits-info')}
+        >
+          <span className="tab-icon">⚡</span>
+          <span className="tab-label">How Credits Work</span>
         </button>
         <button
           className={`tab ${activeTab === 'about' ? 'active' : ''}`}
@@ -377,9 +405,21 @@ function App() {
         {/* Calculator Tab Content */}
         {activeTab === 'calculator' && <Calculator />}
 
+        {/* Credits Info Tab Content */}
+        {activeTab === 'credits-info' && <CreditInfoPage darkMode={darkMode} />}
+
         {/* About Tab Content */}
         {activeTab === 'about' && <About onTabChange={setActiveTab} />}
       </main>
+
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.visible}
+        onClose={() => setToast({ ...toast, visible: false })}
+        duration={toast.duration}
+      />
 
       <footer className="app-footer">
         <div style={{

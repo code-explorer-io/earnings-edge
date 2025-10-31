@@ -86,13 +86,57 @@ export function checkAndRefreshDailyCredits() {
 
   if (nowUTC > lastRefreshUTC) {
     // It's a new day! Add daily credits
-    addDailyCredits();
+    const creditsAdded = addDailyCredits();
     localStorage.setItem(STORAGE_KEYS.LAST_REFRESH, now.toISOString());
     console.log('🌅 New day detected! Added 5 daily credits');
+
+    // Trigger confetti if credits were actually added
+    if (creditsAdded > 0 && typeof window !== 'undefined') {
+      triggerConfetti();
+    }
+
     return true;
   }
 
   return false;
+}
+
+/**
+ * Trigger confetti animation (requires canvas-confetti package)
+ */
+function triggerConfetti() {
+  // Dynamically import confetti to avoid SSR issues
+  import('canvas-confetti').then((confetti) => {
+    confetti.default({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b']
+    });
+
+    // Second burst after a short delay
+    setTimeout(() => {
+      confetti.default({
+        particleCount: 50,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 },
+        colors: ['#10b981', '#3b82f6']
+      });
+    }, 250);
+
+    setTimeout(() => {
+      confetti.default({
+        particleCount: 50,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 },
+        colors: ['#8b5cf6', '#f59e0b']
+      });
+    }, 400);
+  }).catch((err) => {
+    console.warn('Confetti not available:', err);
+  });
 }
 
 /**

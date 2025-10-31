@@ -76,6 +76,36 @@ function CreditCounter({ onCreditUpdate, darkMode }) {
             <strong>Credit Balance</strong>
           </div>
 
+          {/* Progress Bar for Daily Credits */}
+          {creditStatus.welcomeUsed && creditStatus.freeCredits < 5 && (
+            <div style={{ marginBottom: '0.75rem' }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                fontSize: '0.85rem',
+                marginBottom: '0.25rem',
+                opacity: 0.8
+              }}>
+                <span>Today's Free Credits</span>
+                <span>{creditStatus.freeCredits}/5</span>
+              </div>
+              <div style={{
+                height: '8px',
+                background: darkMode ? '#2a2a2a' : '#e5e7eb',
+                borderRadius: '4px',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  height: '100%',
+                  width: `${(creditStatus.freeCredits / 5) * 100}%`,
+                  background: 'linear-gradient(90deg, #10b981, #3b82f6)',
+                  transition: 'width 0.3s ease',
+                  borderRadius: '4px'
+                }}></div>
+              </div>
+            </div>
+          )}
+
           <div className="tooltip-row">
             <span>Total Credits:</span>
             <span className="tooltip-value">{creditStatus.totalCredits}</span>

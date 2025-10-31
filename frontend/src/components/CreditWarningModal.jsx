@@ -23,36 +23,49 @@ function CreditWarningModal({ isOpen, onClose, warningType, darkMode }) {
   const renderContent = () => {
     switch (warningType) {
       case 'no-credits':
+        const status = getCreditStatus();
+        const welcomeUsed = status?.welcomeUsed;
+
         return (
           <>
-            <div className="modal-icon modal-icon-error">⚠️</div>
-            <h2 className="modal-title">Out of Credits</h2>
+            <div className="modal-icon modal-icon-error">⏰</div>
+            <h2 className="modal-title">Out of Credits!</h2>
             <p className="modal-message">
-              You've used all your credits for today. Your daily credits will refresh at midnight UTC.
+              {welcomeUsed
+                ? "You've used your 5 free credits today. Get 5 more free credits tomorrow at midnight UTC!"
+                : "You've used your 10 welcome credits!"}
             </p>
-            {timeUntilRefresh && (
+
+            {timeUntilRefresh && welcomeUsed && (
               <div className="refresh-timer">
                 <div className="timer-label">Next refresh in:</div>
                 <div className="timer-value">
                   {timeUntilRefresh.hours}h {timeUntilRefresh.minutes}m
                 </div>
+                <div style={{ fontSize: '0.9rem', opacity: 0.8, marginTop: '0.5rem' }}>
+                  Credits refresh at midnight UTC
+                </div>
               </div>
             )}
-            <div className="modal-info" style={{
-              background: darkMode ? '#2a2a2a' : '#f9fafb',
-              padding: '1rem',
-              borderRadius: '8px',
-              marginTop: '1rem'
-            }}>
-              <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>
-                💡 What you get daily:
+
+            {!welcomeUsed && (
+              <div className="modal-info" style={{
+                background: darkMode ? '#2a2a2a' : '#f9fafb',
+                padding: '1rem',
+                borderRadius: '8px',
+                marginTop: '1rem'
+              }}>
+                <div style={{ fontWeight: '600', marginBottom: '0.5rem', color: '#10b981' }}>
+                  🌅 Starting tomorrow, you'll get:
+                </div>
+                <ul style={{ margin: 0, paddingLeft: '1.5rem' }}>
+                  <li>5 free credits every day</li>
+                  <li>Automatically at midnight UTC</li>
+                  <li>Perfect for daily trading insights</li>
+                </ul>
               </div>
-              <ul style={{ margin: 0, paddingLeft: '1.5rem' }}>
-                <li>5 free credits every day</li>
-                <li>Reset at midnight UTC</li>
-                <li>Each analysis costs 1 credit</li>
-              </ul>
-            </div>
+            )}
+
             <div className="modal-future-feature" style={{
               background: darkMode ? '#1e3a2a' : '#f0fdf4',
               color: darkMode ? '#86efac' : '#16a34a',
@@ -61,11 +74,35 @@ function CreditWarningModal({ isOpen, onClose, warningType, darkMode }) {
               marginTop: '1rem',
               border: darkMode ? '1px solid #2a4a3a' : '1px solid #bbf7d0'
             }}>
-              <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>
-                🚀 Coming Soon: Purchase Credits
+              <div style={{ fontWeight: '600', marginBottom: '0.75rem', fontSize: '1.05rem' }}>
+                💎 Want Unlimited Credits Now?
               </div>
-              <div style={{ fontSize: '0.9rem' }}>
-                Buy credit bundles that never expire. Powered by Coinbase Commerce for secure crypto payments.
+              <div style={{ fontSize: '0.95rem', marginBottom: '1rem', lineHeight: '1.6' }}>
+                Soon you'll be able to buy credit bundles that never expire. Pay with cryptocurrency via Coinbase Commerce - instant delivery!
+              </div>
+              <button
+                disabled
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  background: '#6b7280',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  cursor: 'not-allowed',
+                  opacity: 0.6,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                <span>Coming Soon - Buy Credits</span>
+              </button>
+              <div style={{ fontSize: '0.85rem', opacity: 0.8, marginTop: '0.5rem', textAlign: 'center' }}>
+                Coinbase checkout launching soon • Pay with USDC, BTC, or ETH
               </div>
             </div>
           </>
@@ -168,7 +205,7 @@ function CreditWarningModal({ isOpen, onClose, warningType, darkMode }) {
             color: darkMode ? '#E0E0E0' : '#374151'
           }}
         >
-          {warningType === 'welcome' ? 'Get Started' : 'Close'}
+          {warningType === 'welcome' ? 'Get Started' : warningType === 'no-credits' ? 'Come Back Tomorrow' : 'Close'}
         </button>
       </div>
     </div>
