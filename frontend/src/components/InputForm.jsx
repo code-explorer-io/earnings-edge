@@ -184,29 +184,43 @@ function InputForm({ onAnalyze, loading }) {
           continue;
         }
 
+        // Helper: Check if word starts with capital letter or is a number
+        const startsWithCapital = /^[A-Z]/.test(word);
+        const isNumber = /^\d+$/.test(word);
+        const isCapitalizedOrNumber = startsWithCapital || isNumber;
+
         // Check if this starts a multi-word phrase
-        if (i < words.length - 1 &&
-            word[0] === word[0].toUpperCase() &&
-            words[i + 1][0] === words[i + 1][0].toUpperCase()) {
-          // Potential multi-word phrase
-          let phrase = word;
-          let j = i + 1;
-          while (j < words.length &&
-                 words[j][0] === words[j][0].toUpperCase() &&
-                 !junkWords.has(words[j].toLowerCase()) &&
-                 j - i < 4) { // Limit phrase length to 4 words
-            phrase += ' ' + words[j];
-            j++;
-          }
-          if (j > i + 1) {
-            potentialWords.push(phrase);
-            i = j;
-            continue;
+        if (i < words.length - 1 && startsWithCapital) {
+          // Check if next word is capitalized or a number
+          const nextStartsWithCapital = /^[A-Z]/.test(words[i + 1]);
+          const nextIsNumber = /^\d+$/.test(words[i + 1]);
+
+          if (nextStartsWithCapital || nextIsNumber) {
+            // Potential multi-word phrase
+            let phrase = word;
+            let j = i + 1;
+            while (j < words.length && j - i < 4) { // Limit phrase length to 4 words
+              const currentStartsWithCapital = /^[A-Z]/.test(words[j]);
+              const currentIsNumber = /^\d+$/.test(words[j]);
+
+              // Continue if word is capitalized or a number, and not junk
+              if ((currentStartsWithCapital || currentIsNumber) && !junkWords.has(words[j].toLowerCase())) {
+                phrase += ' ' + words[j];
+                j++;
+              } else {
+                break;
+              }
+            }
+            if (j > i + 1) {
+              potentialWords.push(phrase);
+              i = j;
+              continue;
+            }
           }
         }
 
         // Single word - keep if it looks like a proper noun or keyword
-        if (word[0] === word[0].toUpperCase() || wordLower === word.toUpperCase()) {
+        if (startsWithCapital || wordLower === word.toUpperCase()) {
           potentialWords.push(word);
         }
 
