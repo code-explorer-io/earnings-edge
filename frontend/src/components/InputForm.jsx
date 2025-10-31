@@ -185,9 +185,10 @@ function InputForm({ onAnalyze, loading }) {
       while (i < words.length) {
         const word = words[i];
 
-        // Skip if too short (unless whitelisted)
+        // Skip if too short (unless whitelisted or a number)
         const wordLower = word.toLowerCase();
-        if (word.length < 3 && !shortWordWhitelist.has(wordLower)) {
+        const isNumber = /^\d+$/.test(word);
+        if (word.length < 3 && !shortWordWhitelist.has(wordLower) && !isNumber) {
           i++;
           continue;
         }
@@ -198,9 +199,9 @@ function InputForm({ onAnalyze, loading }) {
           continue;
         }
 
-        // Helper: Check if word starts with capital letter or is a number
+        // Helper: Check if word starts with capital letter
         const startsWithCapital = /^[A-Z]/.test(word);
-        const isNumber = /^\d+$/.test(word);
+        // isNumber already defined above
         const isCapitalizedOrNumber = startsWithCapital || isNumber;
 
         // Check if this starts a multi-word phrase
