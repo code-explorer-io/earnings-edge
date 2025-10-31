@@ -134,7 +134,21 @@ function InputForm({ onAnalyze, loading }) {
     // Remove common symbols and clean text
     let cleaned = preprocessed
       .replace(/[$¢%]/g, ' ')  // Remove currency symbols and percent
-      .replace(/\d+/g, ' ')    // Remove numbers
+      .replace(/\b\d+\b/g, (match, offset, string) => {
+        // Keep numbers if they're part of a phrase (preceded by a letter or followed by a letter)
+        // e.g., "Windows 10", "RTX 6000", but remove standalone numbers like "88", "123"
+        const before = string[offset - 1];
+        const after = string[offset + match.length];
+        const hasLetterBefore = before && /[a-zA-Z]/.test(before);
+        const hasLetterAfter = after && /[a-zA-Z]/.test(after);
+
+        // Keep the number if it has a letter before or after (part of a phrase)
+        if (hasLetterBefore || hasLetterAfter) {
+          return match;
+        }
+        // Remove standalone numbers
+        return ' ';
+      })
       .replace(/[^\w\s'\-|]/g, ' ')  // Keep only words, spaces, hyphens, apostrophes, and our delimiter
       .replace(/\s+/g, ' ')    // Normalize whitespace
       .trim();
