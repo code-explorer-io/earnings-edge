@@ -131,31 +131,45 @@ function InputForm({ onAnalyze, loading }) {
     // Replace " / " with a unique delimiter that we'll split on later
     let preprocessed = text.replace(/\s+\/\s+/g, '|||VARIANT|||');
 
-    // Remove common symbols and clean text
-    let cleaned = preprocessed
-      .replace(/[$¢%]/g, ' ')  // Remove currency symbols and percent
-      .replace(/\b\d+\b/g, (match, offset, string) => {
-        // Keep numbers if they're part of a phrase (preceded by a letter or followed by a letter)
-        // e.g., "Windows 10", "RTX 6000", but remove standalone numbers like "88", "123"
-        const before = string[offset - 1];
-        const after = string[offset + match.length];
-        const hasLetterBefore = before && /[a-zA-Z]/.test(before);
-        const hasLetterAfter = after && /[a-zA-Z]/.test(after);
+    // First split by newlines to preserve line boundaries
+    const lines = preprocessed.split(/\n+/);
 
-        // Keep the number if it has a letter before or after (part of a phrase)
-        if (hasLetterBefore || hasLetterAfter) {
-          return match;
-        }
-        // Remove standalone numbers
-        return ' ';
-      })
-      .replace(/[^\w\s'\-|]/g, ' ')  // Keep only words, spaces, hyphens, apostrophes, and our delimiter
-      .replace(/\s+/g, ' ')    // Normalize whitespace
-      .trim();
+    // Process each line separately
+    const allTokens = [];
 
-    // Split by various separators AND our variant delimiter
-    const tokens = cleaned.split(/[,;\n\t]|(\|\|\|VARIANT\|\|\|)+/)
-      .filter(token => token && token.trim() && token !== '|||VARIANT|||');
+    for (let line of lines) {
+      // Remove common symbols and clean text
+      let cleaned = line
+        .replace(/[$¢%]/g, ' ')  // Remove currency symbols and percent
+        .replace(/\b\d+\b/g, (match, offset, string) => {
+          // Keep numbers if they're part of a phrase (preceded by a letter or followed by a letter)
+          // e.g., "Windows 10", "RTX 6000", but remove standalone numbers like "88", "123"
+          const before = string[offset - 1];
+          const after = string[offset + match.length];
+          const hasLetterBefore = before && /[a-zA-Z]/.test(before);
+          const hasLetterAfter = after && /[a-zA-Z]/.test(after);
+
+          // Keep the number if it has a letter before or after (part of a phrase)
+          if (hasLetterBefore || hasLetterAfter) {
+            return match;
+          }
+          // Remove standalone numbers
+          return ' ';
+        })
+        .replace(/[^\w\s'\-|]/g, ' ')  // Keep only words, spaces, hyphens, apostrophes, and our delimiter
+        .replace(/\s+/g, ' ')    // Normalize whitespace
+        .trim();
+
+      if (!cleaned) continue;
+
+      // Split by various separators AND our variant delimiter within each line
+      const lineTokens = cleaned.split(/[,;\t]|(\|\|\|VARIANT\|\|\|)+/)
+        .filter(token => token && token.trim() && token !== '|||VARIANT|||');
+
+      allTokens.push(...lineTokens);
+    }
+
+    const tokens = allTokens;
 
     const potentialWords = [];
 
