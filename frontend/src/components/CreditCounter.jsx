@@ -137,7 +137,7 @@ function CreditCounter({ onCreditUpdate, darkMode }) {
             <>
               <div className="tooltip-row">
                 <span>Daily Free:</span>
-                <span className="tooltip-value">5 credits</span>
+                <span className="tooltip-value">3 credits</span>
               </div>
               <div className="tooltip-row">
                 <span>Next Refresh:</span>
