@@ -150,7 +150,7 @@ function CreditInfoPage({ darkMode }) {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <h3 style={{ fontSize: '1.5rem', margin: 0 }}>🌅 Daily Free</h3>
-              <span style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#3b82f6' }}>3 Credits/Day</span>
+              <span style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#3b82f6' }}>5 Credits/Day</span>
             </div>
             <ul style={{ paddingLeft: '1.5rem', lineHeight: '1.8' }}>
               <li>Automatically added at midnight UTC</li>
@@ -235,7 +235,7 @@ function CreditInfoPage({ darkMode }) {
             lineHeight: '1.8'
           }}>
             <p style={{ marginBottom: '1rem' }}>
-              Our generous free tier (10 welcome + 3 daily) lets you validate your trading strategies without any upfront cost. This model keeps API costs sustainable while giving you plenty of free analyses.
+              Our generous free tier (10 welcome + 5 daily) lets you validate your trading strategies without any upfront cost. This model keeps API costs sustainable while giving you plenty of free analyses.
             </p>
             <p style={{ margin: 0 }}>
               Power users who need unlimited analyses can purchase credit bundles (coming soon). This ensures the tool remains free for most users while being sustainable long-term.

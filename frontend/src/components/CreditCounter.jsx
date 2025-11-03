@@ -77,7 +77,7 @@ function CreditCounter({ onCreditUpdate, darkMode }) {
           </div>
 
           {/* Progress Bar for Daily Credits */}
-          {creditStatus.welcomeUsed && creditStatus.freeCredits < 3 && (
+          {creditStatus.welcomeUsed && creditStatus.freeCredits < 5 && (
             <div style={{ marginBottom: '0.75rem' }}>
               <div style={{
                 display: 'flex',
@@ -87,7 +87,7 @@ function CreditCounter({ onCreditUpdate, darkMode }) {
                 opacity: 0.8
               }}>
                 <span>Today's Free Credits</span>
-                <span>{creditStatus.freeCredits}/3</span>
+                <span>{creditStatus.freeCredits}/5</span>
               </div>
               <div style={{
                 height: '8px',
@@ -97,7 +97,7 @@ function CreditCounter({ onCreditUpdate, darkMode }) {
               }}>
                 <div style={{
                   height: '100%',
-                  width: `${(creditStatus.freeCredits / 3) * 100}%`,
+                  width: `${(creditStatus.freeCredits / 5) * 100}%`,
                   background: 'linear-gradient(90deg, #10b981, #3b82f6)',
                   transition: 'width 0.3s ease',
                   borderRadius: '4px'
@@ -137,7 +137,7 @@ function CreditCounter({ onCreditUpdate, darkMode }) {
             <>
               <div className="tooltip-row">
                 <span>Daily Free:</span>
-                <span className="tooltip-value">3 credits</span>
+                <span className="tooltip-value">5 credits</span>
               </div>
               <div className="tooltip-row">
                 <span>Next Refresh:</span>
@@ -158,7 +158,7 @@ function CreditCounter({ onCreditUpdate, darkMode }) {
                 Welcome Bonus Active!
               </div>
               <div>
-                After using these 10 credits, you'll receive 3 free credits daily.
+                After using these 10 credits, you'll receive 5 free credits daily.
               </div>
             </div>
           )}

@@ -32,7 +32,7 @@ function CreditWarningModal({ isOpen, onClose, warningType, darkMode }) {
             <h2 className="modal-title">Out of Credits!</h2>
             <p className="modal-message">
               {welcomeUsed
-                ? "You've used your 3 free credits today. Get 3 more free credits tomorrow at midnight UTC!"
+                ? "You've used your 5 free credits today. Get 5 more free credits tomorrow at midnight UTC!"
                 : "You've used your 10 welcome credits!"}
             </p>
 
@@ -59,7 +59,7 @@ function CreditWarningModal({ isOpen, onClose, warningType, darkMode }) {
                   🌅 Starting tomorrow, you'll get:
                 </div>
                 <ul style={{ margin: 0, paddingLeft: '1.5rem' }}>
-                  <li>3 free credits every day</li>
+                  <li>5 free credits every day</li>
                   <li>Automatically at midnight UTC</li>
                   <li>Perfect for daily trading insights</li>
                 </ul>
@@ -128,7 +128,7 @@ function CreditWarningModal({ isOpen, onClose, warningType, darkMode }) {
               <ul style={{ margin: 0, paddingLeft: '1.5rem' }}>
                 <li>Focus on high-value PolyMarket opportunities</li>
                 <li>Analyze multiple words at once</li>
-                <li>Get 3 more credits tomorrow at midnight UTC</li>
+                <li>Get 5 more credits tomorrow at midnight UTC</li>
               </ul>
             </div>
             {timeUntilRefresh && (
@@ -162,7 +162,7 @@ function CreditWarningModal({ isOpen, onClose, warningType, darkMode }) {
               <ul style={{ margin: 0, paddingLeft: '1.5rem', lineHeight: '1.8' }}>
                 <li>Start with 10 welcome credits</li>
                 <li>Each transcript analysis costs 1 credit</li>
-                <li>After using your welcome credits, get 3 free credits daily</li>
+                <li>After using your welcome credits, get 5 free credits daily</li>
                 <li>Daily credits refresh at midnight UTC</li>
                 <li>Future: Purchase credits that never expire</li>
               </ul>

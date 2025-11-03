@@ -18,7 +18,7 @@ const STORAGE_KEYS = {
 
 const CREDIT_CONFIG = {
   WELCOME_CREDITS: 10,
-  DAILY_CREDITS: 3,
+  DAILY_CREDITS: 5,  // 5 free credits added daily after welcome credits used
   MAX_FREE_CREDITS: 10,
   COST_PER_ANALYSIS: 1
 };
@@ -88,7 +88,7 @@ export function checkAndRefreshDailyCredits() {
     // It's a new day! Add daily credits
     const creditsAdded = addDailyCredits();
     localStorage.setItem(STORAGE_KEYS.LAST_REFRESH, now.toISOString());
-    console.log('🌅 New day detected! Added 3 daily credits');
+    console.log('🌅 New day detected! Added 5 daily credits');
 
     // Trigger confetti if credits were actually added
     if (creditsAdded > 0 && typeof window !== 'undefined') {
