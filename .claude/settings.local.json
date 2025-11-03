@@ -30,7 +30,10 @@
       "Bash(git pull:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(timeout 2 node:*)",
+      "Bash(rm:*)",
+      "Bash(node analyze_q3.js:*)"
     ],
     "deny": [],
     "ask": []
