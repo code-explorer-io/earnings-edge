@@ -149,9 +149,30 @@ app.get('/api/transcripts/:ticker', async (req, res) => {
 async function fetchLast8Quarters(ticker, apiKey) {
   const transcripts = [];
 
-  // Start from Q3 2024 to ensure we have recent, completed earnings data
-  let year = 2024;
-  let quarter = 3;
+  // Calculate most recent quarter with CONFIRMED earnings data available
+  // We go back 2 quarters because companies report earnings 2-6 weeks after quarter end
+  // Example: Nov 2025 = Q4 2025 in progress, Q3 2025 just ended (data may not be ready)
+  // So we start from Q2 2025 (definitely available)
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth(); // 0-11
+
+  // Determine current quarter based on month
+  // Q1: Jan-Mar (0-2), Q2: Apr-Jun (3-5), Q3: Jul-Sep (6-8), Q4: Oct-Dec (9-11)
+  const currentQuarter = Math.floor(currentMonth / 3) + 1;
+
+  // Go back 2 full quarters to ensure earnings data is available
+  // Companies report 2-6 weeks after quarter end, so most recent quarter may not have data yet
+  let year = currentYear;
+  let quarter = currentQuarter - 2;
+
+  // Handle year rollover for negative quarters
+  if (quarter <= 0) {
+    quarter += 4;
+    year--;
+  }
+
+  console.log(`📅 Calculated starting quarter: Q${quarter} ${year} (Current: Q${currentQuarter} ${currentYear})`);
 
   // Generate list of quarters to fetch (last 8 quarters)
   const quartersToFetch = [];
