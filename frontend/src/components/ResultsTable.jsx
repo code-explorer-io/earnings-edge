@@ -71,7 +71,6 @@ function ResultsTable({ data, focusedWords, showHighConsistency, ticker }) {
               <th className="consistency-column" title="Percentage of quarters mentioned">Consistency</th>
               <th className="quarters-mentioned-column" title="Number of quarters with mentions">Qtrs Mentioned</th>
               <th className="bond-rating-column" title="Bond rating based on consistency">Bond Rating</th>
-              <th className="context-column">Context</th>
             </tr>
           </thead>
           <tbody>
@@ -86,8 +85,21 @@ function ResultsTable({ data, focusedWords, showHighConsistency, ticker }) {
                 }}
               >
                 <td className="word-cell">
-                  {wordData.word}
-                  {isHighConsistency && <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem' }}>🟢</span>}
+                  <div className="word-cell-content">
+                    <span>{wordData.word}</span>
+                    {isHighConsistency && <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem' }}>🟢</span>}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleGetContext(wordData.word);
+                      }}
+                      className="context-icon-button"
+                      title="Get Context from Transcript"
+                      aria-label={`Get context for ${wordData.word}`}
+                    >
+                      💬
+                    </button>
+                  </div>
                 </td>
                 <td className="traffic-light-cell" title={`${wordData.riskLevel}: ${wordData.consistencyPercent}%`}>
                   <span style={{ fontSize: '2.25rem' }}>{getTrafficLightEmoji(wordData.trafficLight)}</span>
@@ -113,15 +125,6 @@ function ResultsTable({ data, focusedWords, showHighConsistency, ticker }) {
                 </td>
                 <td className="bond-rating-cell">
                   <strong>{wordData.bondRating}</strong>
-                </td>
-                <td className="context-cell">
-                  <button
-                    onClick={() => handleGetContext(wordData.word)}
-                    className="context-button"
-                    title="Get Context from Transcript"
-                  >
-                    💬 Get Context
-                  </button>
                 </td>
               </tr>
               );

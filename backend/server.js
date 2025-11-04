@@ -427,8 +427,32 @@ function analyzeWordFrequency(words, transcripts) {
 app.get('/api/context/:ticker/:keyword', async (req, res) => {
   try {
     const { ticker, keyword } = req.params;
-    const cacheKey = ticker.toUpperCase();
 
+    // Input validation
+    if (!ticker || !keyword) {
+      return res.status(400).json({
+        error: 'Invalid request',
+        message: 'Ticker and keyword are required'
+      });
+    }
+
+    // Validate ticker format (1-5 uppercase letters)
+    if (!/^[A-Z]{1,5}$/i.test(ticker)) {
+      return res.status(400).json({
+        error: 'Invalid ticker',
+        message: 'Ticker must be 1-5 letters'
+      });
+    }
+
+    // Validate keyword length (prevent DoS)
+    if (keyword.length > 100) {
+      return res.status(400).json({
+        error: 'Invalid keyword',
+        message: 'Keyword must be less than 100 characters'
+      });
+    }
+
+    const cacheKey = ticker.toUpperCase();
     console.log(`📖 Fetching context for "${keyword}" in ${cacheKey}...`);
 
     // Check cache first
@@ -494,18 +518,22 @@ app.get('/api/context/:ticker/:keyword', async (req, res) => {
       quarter: mostRecentTranscript.quarter,
       year: mostRecentTranscript.year,
       excerpts: excerpts,
-      totalMentions: totalMentions,
-      transcriptUrl: `https://api.api-ninjas.com/v1/earningstranscript?ticker=${cacheKey}&year=${mostRecentTranscript.year}&quarter=${mostRecentTranscript.quarterNum}`
+      totalMentions: totalMentions
+      // transcriptUrl removed for security - no need to expose API structure
     };
 
     console.log(`✓ Found ${totalMentions} mentions, returning ${excerpts.length} excerpts`);
     res.json(result);
 
   } catch (error) {
+    // Log detailed error server-side only
     console.error('❌ Error fetching context:', error.message);
+    console.error('Stack trace:', error.stack);
+
+    // Return generic error to client (prevent information leakage)
     res.status(500).json({
       error: 'Failed to fetch context',
-      message: error.message
+      message: 'An error occurred while fetching transcript context. Please try again.'
     });
   }
 });

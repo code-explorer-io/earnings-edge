@@ -276,20 +276,8 @@ function KeywordContextModal({ isOpen, onClose, ticker, keyword }) {
               {/* Will call POST /api/generate-summary */}
               {/* Display above excerpts */}
 
-              {/* Full Transcript Link */}
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <a
-                  href={contextData.transcriptUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  Read Full Transcript →
-                </a>
-              </div>
-
               {/* Note */}
-              <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-gray-700">
                   <strong>Note:</strong> Context from most recent quarter ({contextData.quarter}).
                   AI summary coming soon!

@@ -37,7 +37,9 @@
       "Bash(node test_quarters.js:*)",
       "Bash(dir:*)",
       "Bash(nul)",
-      "Bash(timeout 10 node:*)"
+      "Bash(timeout 10 node:*)",
+      "Bash(taskkill /F /PID 2888)",
+      "Bash(taskkill //F //PID 2888)"
     ],
     "deny": [],
     "ask": []
