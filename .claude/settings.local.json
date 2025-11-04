@@ -39,7 +39,8 @@
       "Bash(nul)",
       "Bash(timeout 10 node:*)",
       "Bash(taskkill /F /PID 2888)",
-      "Bash(taskkill //F //PID 2888)"
+      "Bash(taskkill //F //PID 2888)",
+      "Bash(taskkill //F //PID 13584)"
     ],
     "deny": [],
     "ask": []

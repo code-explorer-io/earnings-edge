@@ -20,11 +20,17 @@ const PORT = process.env.PORT || 3001;
 
 // CORS whitelist - only allow trusted origins
 const allowedOrigins = [
-  'http://localhost:5173',  // Vite dev server (primary)
-  'http://localhost:5174',  // Vite dev server (alternate port)
-  'http://localhost:3000',  // Alternative dev port
-  // Add production Vercel URL here after deployment
-  // 'https://your-app.vercel.app'
+  // Local development servers
+  'http://localhost:5173',      // Vite dev server (primary)
+  'http://localhost:5174',      // Vite dev server (alternate port)
+  'http://localhost:5175',      // Vite dev server (alternate port 2)
+  'http://localhost:3000',      // Alternative dev port
+  'http://127.0.0.1:5173',      // Localhost IP variant
+  'http://127.0.0.1:5174',      // Localhost IP variant
+
+  // Production domains
+  'https://earningsedge.io',    // Production domain
+  'https://www.earningsedge.io' // Production domain with www
 ];
 
 // CORS configuration with origin validation
