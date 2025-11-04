@@ -386,6 +386,7 @@ function App() {
               data={analysisResults.analyzedWords}
               focusedWords={focusedWords}
               showHighConsistency={showHighConsistency}
+              ticker={analysisResults.ticker}
             />
             <QuickStats
               data={analysisResults.analyzedWords}

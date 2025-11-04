@@ -423,6 +423,158 @@ function analyzeWordFrequency(words, transcripts) {
   };
 }
 
+// Get context excerpts for a keyword from the most recent quarter
+app.get('/api/context/:ticker/:keyword', async (req, res) => {
+  try {
+    const { ticker, keyword } = req.params;
+    const cacheKey = ticker.toUpperCase();
+
+    console.log(`📖 Fetching context for "${keyword}" in ${cacheKey}...`);
+
+    // Check cache first
+    let transcriptsData = transcriptCache.get(cacheKey);
+
+    // If not in cache, fetch transcripts
+    if (!transcriptsData) {
+      const apiKey = process.env.API_NINJA_KEY;
+      if (!apiKey || apiKey === 'your_api_key_here') {
+        return res.status(500).json({
+          error: 'API key not configured',
+          message: 'Please configure API_NINJA_KEY in backend/.env file'
+        });
+      }
+
+      console.log(`📡 Fetching transcripts for ${cacheKey} from API Ninjas...`);
+      const transcripts = await fetchLast8Quarters(cacheKey, apiKey);
+
+      if (transcripts.length === 0) {
+        return res.status(404).json({
+          error: 'No transcripts found',
+          message: `No earnings call transcripts available for ticker ${cacheKey}.`
+        });
+      }
+
+      transcriptsData = {
+        ticker: cacheKey,
+        transcripts: transcripts
+      };
+
+      // Cache the result
+      transcriptCache.set(cacheKey, transcriptsData);
+    }
+
+    // Get the most recent quarter's transcript
+    const mostRecentTranscript = transcriptsData.transcripts[0];
+
+    if (!mostRecentTranscript || !mostRecentTranscript.transcript) {
+      return res.status(404).json({
+        error: 'Transcript not available',
+        message: `Transcript for ${cacheKey} is not available.`
+      });
+    }
+
+    // Extract excerpts for the keyword
+    const excerpts = extractKeywordContext(
+      mostRecentTranscript.transcript,
+      keyword,
+      10 // Max 10 excerpts
+    );
+
+    // Count total mentions
+    const transcriptLower = mostRecentTranscript.transcript.toLowerCase();
+    const keywordLower = keyword.toLowerCase();
+    const escapedKeyword = keywordLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`\\b${escapedKeyword}\\b`, 'g');
+    const matches = transcriptLower.match(regex);
+    const totalMentions = matches ? matches.length : 0;
+
+    const result = {
+      keyword: keyword,
+      ticker: cacheKey,
+      quarter: mostRecentTranscript.quarter,
+      year: mostRecentTranscript.year,
+      excerpts: excerpts,
+      totalMentions: totalMentions,
+      transcriptUrl: `https://api.api-ninjas.com/v1/earningstranscript?ticker=${cacheKey}&year=${mostRecentTranscript.year}&quarter=${mostRecentTranscript.quarterNum}`
+    };
+
+    console.log(`✓ Found ${totalMentions} mentions, returning ${excerpts.length} excerpts`);
+    res.json(result);
+
+  } catch (error) {
+    console.error('❌ Error fetching context:', error.message);
+    res.status(500).json({
+      error: 'Failed to fetch context',
+      message: error.message
+    });
+  }
+});
+
+// Helper function to extract context around keyword occurrences
+function extractKeywordContext(transcript, keyword, maxExcerpts = 10) {
+  const keywordLower = keyword.toLowerCase();
+  const excerpts = [];
+
+  // Split transcript into sentences (rough approximation)
+  const sentences = transcript.split(/(?<=[.!?])\s+/);
+
+  // Search through sentences for keyword
+  for (let i = 0; i < sentences.length; i++) {
+    const sentence = sentences[i];
+    const sentenceLower = sentence.toLowerCase();
+
+    // Check if keyword is in this sentence (whole word match)
+    const escapedKeyword = keywordLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`\\b${escapedKeyword}\\b`, 'i');
+
+    if (regex.test(sentenceLower)) {
+      // Get context: current sentence + 1 before + 1 after
+      const contextSentences = [];
+
+      // Add previous sentence if available
+      if (i > 0) {
+        contextSentences.push(sentences[i - 1]);
+      }
+
+      // Add current sentence
+      contextSentences.push(sentence);
+
+      // Add next sentence if available
+      if (i < sentences.length - 1) {
+        contextSentences.push(sentences[i + 1]);
+      }
+
+      // Join and clean up
+      let excerpt = contextSentences.join(' ').trim();
+
+      // Limit to approximately 150 words to keep it readable
+      const words = excerpt.split(/\s+/);
+      if (words.length > 150) {
+        excerpt = words.slice(0, 150).join(' ') + '...';
+      }
+
+      // Add ellipsis at the start if not beginning of transcript
+      if (i > 0) {
+        excerpt = '...' + excerpt;
+      }
+
+      // Add ellipsis at end if not end of transcript
+      if (i < sentences.length - 1 && words.length <= 150) {
+        excerpt = excerpt + '...';
+      }
+
+      excerpts.push(excerpt);
+
+      // Stop if we've reached max excerpts
+      if (excerpts.length >= maxExcerpts) {
+        break;
+      }
+    }
+  }
+
+  return excerpts;
+}
+
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);

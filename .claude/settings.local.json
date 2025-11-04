@@ -36,7 +36,8 @@
       "Bash(node analyze_q3.js:*)",
       "Bash(node test_quarters.js:*)",
       "Bash(dir:*)",
-      "Bash(nul)"
+      "Bash(nul)",
+      "Bash(timeout 10 node:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,6 +1,10 @@
+import { useState } from 'react';
 import './ResultsTable.css';
+import KeywordContextModal from './KeywordContextModal';
 
-function ResultsTable({ data, focusedWords, showHighConsistency }) {
+function ResultsTable({ data, focusedWords, showHighConsistency, ticker }) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedKeyword, setSelectedKeyword] = useState(null);
   if (!data || data.length === 0) return null;
 
   // Filter data if words are focused (multi-select)
@@ -40,6 +44,16 @@ function ResultsTable({ data, focusedWords, showHighConsistency }) {
     }
   };
 
+  const handleGetContext = (keyword) => {
+    setSelectedKeyword(keyword);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedKeyword(null);
+  };
+
   return (
     <div className="results-table-container">
       <h3>📋 Enhanced Quarterly Breakdown</h3>
@@ -57,6 +71,7 @@ function ResultsTable({ data, focusedWords, showHighConsistency }) {
               <th className="consistency-column" title="Percentage of quarters mentioned">Consistency</th>
               <th className="quarters-mentioned-column" title="Number of quarters with mentions">Qtrs Mentioned</th>
               <th className="bond-rating-column" title="Bond rating based on consistency">Bond Rating</th>
+              <th className="context-column">Context</th>
             </tr>
           </thead>
           <tbody>
@@ -99,12 +114,29 @@ function ResultsTable({ data, focusedWords, showHighConsistency }) {
                 <td className="bond-rating-cell">
                   <strong>{wordData.bondRating}</strong>
                 </td>
+                <td className="context-cell">
+                  <button
+                    onClick={() => handleGetContext(wordData.word)}
+                    className="context-button"
+                    title="Get Context from Transcript"
+                  >
+                    💬 Get Context
+                  </button>
+                </td>
               </tr>
               );
             })}
           </tbody>
         </table>
       </div>
+
+      {/* Keyword Context Modal */}
+      <KeywordContextModal
+        isOpen={modalOpen}
+        onClose={handleCloseModal}
+        ticker={ticker}
+        keyword={selectedKeyword}
+      />
     </div>
   );
 }

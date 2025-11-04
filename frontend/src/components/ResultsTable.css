@@ -134,6 +134,45 @@
   color: #E0E0E0;
 }
 
+.context-column {
+  text-align: center;
+}
+
+.context-cell {
+  text-align: center;
+}
+
+.context-button {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  color: #2563eb;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: 0.375rem;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.context-button:hover {
+  color: #1e40af;
+  background: #eff6ff;
+  text-decoration: underline;
+}
+
+.context-button:active {
+  transform: scale(0.98);
+}
+
+.dark-mode .context-button {
+  color: #60a5fa;
+}
+
+.dark-mode .context-button:hover {
+  color: #93c5fd;
+  background: #1e3a5f;
+}
+
 @media (max-width: 768px) {
   .results-table-container {
     padding: 1rem;
@@ -146,5 +185,10 @@
   .results-table th,
   .results-table td {
     padding: 0.5rem 0.25rem;
+  }
+
+  .context-button {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
   }
 }
