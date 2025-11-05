@@ -6,7 +6,7 @@ function About({ onTabChange }) {
       <div className="about-header">
         <h2>About EarningsEdge</h2>
         <p className="about-subtitle">
-          Your competitive advantage for PolyMarket prediction markets
+          Historical earnings call data analysis for informed trading decisions
         </p>
       </div>
 
@@ -15,10 +15,9 @@ function About({ onTabChange }) {
           <div className="section-icon">🎯</div>
           <h3>What is EarningsEdge?</h3>
           <p>
-            EarningsEdge is a powerful analytics tool designed to help PolyMarket traders make data-driven
-            decisions on earnings call prediction markets. By analyzing historical earnings transcripts,
-            we provide insights into whether specific words or phrases are likely to be mentioned in
-            upcoming earnings calls.
+            EarningsEdge is a historical data analysis tool for earnings call transcripts. We track
+            keyword mention patterns across the last 8 quarters of earnings calls, providing factual
+            frequency data that traders can use to inform their own PolyMarket predictions.
           </p>
         </div>
 
@@ -50,8 +49,8 @@ function About({ onTabChange }) {
             <div className="step">
               <div className="step-number">4</div>
               <div className="step-content">
-                <h4>Make Informed Decisions</h4>
-                <p>Use our consistency scores, trends, and recommendations to trade with confidence</p>
+                <h4>Review Historical Patterns</h4>
+                <p>Use consistency scores and frequency data to inform your trading decisions</p>
               </div>
             </div>
           </div>
@@ -67,11 +66,11 @@ function About({ onTabChange }) {
             </div>
             <div className="feature">
               <h4>🚦 Traffic Light System</h4>
-              <p>GREEN, AMBER, or RED ratings based on consistency scores</p>
+              <p>GREEN, AMBER, or RED indicators based on consistency scores</p>
             </div>
             <div className="feature">
-              <h4>💎 Bond Ratings</h4>
-              <p>AAA to B ratings indicating reliability of mention patterns</p>
+              <h4>💬 AI-Powered Context</h4>
+              <p>Get AI summaries and read actual transcript excerpts for each keyword</p>
             </div>
             <div className="feature">
               <h4>💰 Profit Calculator</h4>
@@ -96,24 +95,16 @@ function About({ onTabChange }) {
             </div>
 
             <div className="metric-card">
-              <h4>Traffic Light Rating</h4>
+              <h4>Traffic Light Indicators</h4>
+              <p>Visual indicators showing historical mention consistency:</p>
               <ul>
-                <li><span className="badge green">GREEN</span> ≥80% consistency - Low Risk</li>
-                <li><span className="badge amber">AMBER</span> 50-79% consistency - Medium Risk</li>
-                <li><span className="badge red">RED</span> &lt;50% consistency - High Risk</li>
+                <li><span className="badge green">GREEN</span> ≥80% - Mentioned in 80%+ of quarters</li>
+                <li><span className="badge amber">AMBER</span> 50-79% - Mentioned in 50-79% of quarters</li>
+                <li><span className="badge red">RED</span> &lt;50% - Mentioned in less than 50% of quarters</li>
               </ul>
-            </div>
-
-            <div className="metric-card">
-              <h4>Bond Rating System</h4>
-              <p>Similar to credit ratings, indicating reliability:</p>
-              <ul>
-                <li><strong>AAA:</strong> ≥87.5% - Exceptional consistency</li>
-                <li><strong>AA:</strong> 75-87.4% - Very reliable</li>
-                <li><strong>A:</strong> 62.5-74.9% - Reliable</li>
-                <li><strong>BBB:</strong> 50-62.4% - Moderate</li>
-                <li><strong>BB-B:</strong> &lt;50% - Speculative</li>
-              </ul>
+              <div className="metric-example">
+                <strong>Note:</strong> These are historical patterns only. Past frequency does not predict future mentions.
+              </div>
             </div>
           </div>
         </div>
@@ -123,15 +114,19 @@ function About({ onTabChange }) {
           <h3>Important Disclaimers</h3>
           <div className="disclaimer-box">
             <p>
-              <strong>This tool is for informational purposes only.</strong> Historical data does not
-              guarantee future results. Past earnings call mentions are not predictive of future
-              mentions. Always conduct your own research and consider multiple factors before making
-              trading decisions.
+              <strong>This is a historical data analysis tool only.</strong> EarningsEdge displays
+              factual frequency data from past earnings transcripts. We do not make predictions or
+              recommendations about future earnings calls.
             </p>
             <p>
-              EarningsEdge analyzes historical transcripts and provides statistical insights. It does
-              not constitute financial advice. Trade at your own risk and never invest more than you
-              can afford to lose.
+              <strong>Not Financial Advice:</strong> Historical mention patterns do not guarantee or
+              predict future mentions. Past data is not indicative of future results. Always conduct
+              your own research and analysis before making any trading decisions.
+            </p>
+            <p>
+              <strong>Your Responsibility:</strong> You are solely responsible for interpreting this
+              historical data and making your own trading decisions. Trade at your own risk and never
+              invest more than you can afford to lose.
             </p>
           </div>
         </div>
