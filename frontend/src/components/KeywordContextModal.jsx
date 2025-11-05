@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { celebrateAiSummary, celebrateShareCopied } from '../utils/confetti';
 
+// Use environment variable for API URL, fallback to production API, or localhost for dev
+const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.MODE === 'production' ? '/api' : 'http://localhost:3001/api');
+
 function KeywordContextModal({ isOpen, onClose, ticker, keyword }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -67,7 +70,7 @@ function KeywordContextModal({ isOpen, onClose, ticker, keyword }) {
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:3001/api/context/${ticker}/${keyword}`);
+      const response = await fetch(`${API_BASE_URL}/context/${ticker}/${keyword}`);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -94,7 +97,7 @@ function KeywordContextModal({ isOpen, onClose, ticker, keyword }) {
     setAiError(false);
 
     try {
-      const response = await fetch('http://localhost:3001/api/generate-summary', {
+      const response = await fetch(`${API_BASE_URL}/generate-summary`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
