@@ -4,8 +4,16 @@ import dotenv from 'dotenv';
 import axios from 'axios';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
+import OpenAI from 'openai';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
+
+// Setup __dirname for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Validate required environment variables
 if (!process.env.API_NINJA_KEY || process.env.API_NINJA_KEY === 'your_api_key_here') {
@@ -15,8 +23,33 @@ if (!process.env.API_NINJA_KEY || process.env.API_NINJA_KEY === 'your_api_key_he
 }
 console.log('✅ API key loaded successfully');
 
+// Initialize OpenAI (optional - only if API key is provided)
+let openai = null;
+if (process.env.OPENAI_API_KEY) {
+  openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  console.log('✅ OpenAI API key loaded successfully');
+} else {
+  console.log('⚠️  OpenAI API key not found - AI summaries will be disabled');
+}
+
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Setup cache directory for AI summaries
+const CACHE_DIR = path.join(__dirname, 'cache');
+const SUMMARIES_CACHE_FILE = path.join(CACHE_DIR, 'summaries.json');
+
+// Create cache directory if it doesn't exist
+if (!fs.existsSync(CACHE_DIR)) {
+  fs.mkdirSync(CACHE_DIR, { recursive: true });
+  console.log('✅ Created cache directory');
+}
+
+// Initialize summaries cache file if it doesn't exist
+if (!fs.existsSync(SUMMARIES_CACHE_FILE)) {
+  fs.writeFileSync(SUMMARIES_CACHE_FILE, JSON.stringify({}), 'utf8');
+  console.log('✅ Created summaries cache file');
+}
 
 // CORS whitelist - only allow trusted origins
 const allowedOrigins = [
@@ -608,6 +641,192 @@ function extractKeywordContext(transcript, keyword, maxExcerpts = 10) {
 
   return excerpts;
 }
+
+// Helper functions for AI summary caching
+function getCachedSummary(ticker, quarter, keyword) {
+  try {
+    const cacheData = JSON.parse(fs.readFileSync(SUMMARIES_CACHE_FILE, 'utf8'));
+    const cacheKey = `${ticker}_${quarter}_${keyword}`.toLowerCase();
+
+    if (cacheData[cacheKey]) {
+      const cached = cacheData[cacheKey];
+      const cacheAge = Date.now() - cached.timestamp;
+      const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+
+      // Return cached if less than 30 days old
+      if (cacheAge < thirtyDays) {
+        console.log(`✓ Using cached summary for ${cacheKey}`);
+        return cached.summary;
+      } else {
+        console.log(`⚠️  Cache expired for ${cacheKey}`);
+      }
+    }
+  } catch (err) {
+    console.error('Error reading cache:', err.message);
+  }
+
+  return null;
+}
+
+function saveSummaryToCache(ticker, quarter, keyword, summary) {
+  try {
+    const cacheData = JSON.parse(fs.readFileSync(SUMMARIES_CACHE_FILE, 'utf8'));
+    const cacheKey = `${ticker}_${quarter}_${keyword}`.toLowerCase();
+
+    cacheData[cacheKey] = {
+      summary: summary,
+      timestamp: Date.now()
+    };
+
+    fs.writeFileSync(SUMMARIES_CACHE_FILE, JSON.stringify(cacheData, null, 2), 'utf8');
+    console.log(`✓ Saved summary to cache for ${cacheKey}`);
+  } catch (err) {
+    console.error('Error writing to cache:', err.message);
+  }
+}
+
+// Generate AI summary using OpenAI
+app.post('/api/generate-summary', async (req, res) => {
+  try {
+    const { ticker, quarter, keyword, excerpts } = req.body;
+
+    // Input validation
+    if (!ticker || !quarter || !keyword || !excerpts) {
+      return res.status(400).json({
+        error: 'Invalid request',
+        message: 'ticker, quarter, keyword, and excerpts are required'
+      });
+    }
+
+    // Validate ticker format (1-5 uppercase letters)
+    if (!/^[A-Z]{1,5}$/i.test(ticker)) {
+      return res.status(400).json({
+        error: 'Invalid ticker',
+        message: 'Ticker must be 1-5 letters'
+      });
+    }
+
+    // Validate quarter format (Q1-Q4 YYYY)
+    if (!/^Q[1-4]\s\d{4}$/.test(quarter)) {
+      return res.status(400).json({
+        error: 'Invalid quarter',
+        message: 'Quarter must be in format "Q1 2025"'
+      });
+    }
+
+    // Validate keyword length
+    if (keyword.length > 100) {
+      return res.status(400).json({
+        error: 'Invalid keyword',
+        message: 'Keyword must be less than 100 characters'
+      });
+    }
+
+    // Validate excerpts is an array with at least 1 item
+    if (!Array.isArray(excerpts) || excerpts.length === 0) {
+      return res.status(400).json({
+        error: 'Invalid excerpts',
+        message: 'Excerpts must be a non-empty array'
+      });
+    }
+
+    console.log(`🤖 Generating AI summary for ${ticker} ${quarter} - "${keyword}"`);
+
+    // Check cache first
+    const cachedSummary = getCachedSummary(ticker, quarter, keyword);
+    if (cachedSummary) {
+      return res.json({
+        summary: cachedSummary.summary,
+        tradingInsight: cachedSummary.tradingInsight,
+        cached: true
+      });
+    }
+
+    // Check if OpenAI is available
+    if (!openai) {
+      return res.status(503).json({
+        error: 'AI summary unavailable',
+        message: 'OpenAI API key not configured. AI summaries are temporarily unavailable.'
+      });
+    }
+
+    // Prepare excerpts for OpenAI (limit to first 5 to stay within token limits)
+    const limitedExcerpts = excerpts.slice(0, 5);
+    const excerptsText = limitedExcerpts.map((e, i) => `${i + 1}. ${e}`).join('\n\n');
+
+    // Call OpenAI API
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      max_tokens: 300,
+      temperature: 0.3,
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an expert at analyzing earnings call transcripts for traders making predictions on PolyMarket.'
+        },
+        {
+          role: 'user',
+          content: `Analyze these excerpts from ${ticker} ${quarter} earnings call about '${keyword}' and provide:
+
+1) SUMMARY (2-3 sentences): What did the company say and why does it matter?
+
+2) TRADING INSIGHT (1 sentence): Will the CEO likely mention '${keyword}' in the next quarter? Be specific and actionable for PolyMarket predictions.
+
+Excerpts:
+${excerptsText}
+
+Format your response as:
+SUMMARY: [your summary]
+TRADING INSIGHT: [your insight]`
+        }
+      ]
+    });
+
+    const response = completion.choices[0].message.content;
+
+    // Parse the response
+    const summaryMatch = response.match(/SUMMARY:\s*(.+?)(?=TRADING INSIGHT:|$)/s);
+    const insightMatch = response.match(/TRADING INSIGHT:\s*(.+?)$/s);
+
+    const summary = summaryMatch ? summaryMatch[1].trim() : response;
+    const tradingInsight = insightMatch ? insightMatch[1].trim() : 'Unable to generate trading insight.';
+
+    const result = {
+      summary: summary,
+      tradingInsight: tradingInsight
+    };
+
+    // Save to cache
+    saveSummaryToCache(ticker, quarter, keyword, result);
+
+    console.log(`✓ AI summary generated for ${ticker} ${quarter} - "${keyword}"`);
+
+    res.json({
+      summary: summary,
+      tradingInsight: tradingInsight,
+      cached: false
+    });
+
+  } catch (error) {
+    // Log detailed error server-side only
+    console.error('❌ Error generating AI summary:', error.message);
+    console.error('Stack trace:', error.stack);
+
+    // Check for specific OpenAI errors
+    if (error.code === 'insufficient_quota') {
+      return res.status(503).json({
+        error: 'AI summary unavailable',
+        message: 'OpenAI quota exceeded. AI summaries are temporarily unavailable.'
+      });
+    }
+
+    // Return generic error to client
+    res.status(500).json({
+      error: 'Failed to generate AI summary',
+      message: 'An error occurred while generating the AI summary. Please try again.'
+    });
+  }
+});
 
 // Start server
 app.listen(PORT, () => {

@@ -8,11 +8,18 @@ function KeywordContextModal({ isOpen, onClose, ticker, keyword }) {
   const [currentExcerptIndex, setCurrentExcerptIndex] = useState(0);
   const [copiedIndex, setCopiedIndex] = useState(null);
 
+  // AI Summary states
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState(false);
+  const [aiSummary, setAiSummary] = useState(null);
+
   useEffect(() => {
     if (isOpen && ticker && keyword) {
       fetchContext();
       setShowAll(false);
       setCurrentExcerptIndex(0);
+      setAiSummary(null);
+      setAiError(false);
     }
   }, [isOpen, ticker, keyword]);
 
@@ -68,11 +75,49 @@ function KeywordContextModal({ isOpen, onClose, ticker, keyword }) {
 
       const data = await response.json();
       setContextData(data);
+
+      // Fetch AI summary after excerpts are loaded
+      if (data.excerpts && data.excerpts.length > 0) {
+        fetchAiSummary(data);
+      }
     } catch (err) {
       console.error('Error fetching context:', err);
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAiSummary = async (contextData) => {
+    setAiLoading(true);
+    setAiError(false);
+
+    try {
+      const response = await fetch('http://localhost:3001/api/generate-summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ticker: contextData.ticker,
+          quarter: contextData.quarter,
+          keyword: contextData.keyword,
+          excerpts: contextData.excerpts
+        })
+      });
+
+      if (!response.ok) {
+        // If AI summary fails, just hide the section (excerpts still work)
+        console.warn('AI summary unavailable');
+        setAiError(true);
+        return;
+      }
+
+      const data = await response.json();
+      setAiSummary(data);
+    } catch (err) {
+      console.error('Error fetching AI summary:', err);
+      setAiError(true);
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -184,6 +229,43 @@ function KeywordContextModal({ isOpen, onClose, ticker, keyword }) {
 
           {contextData && !loading && !error && (
             <>
+              {/* AI Summary Section */}
+              {!aiError && (
+                <div className="mb-6">
+                  {/* AI Summary */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xl">🤖</span>
+                      <h3 className="text-md font-semibold text-gray-800">AI Summary</h3>
+                    </div>
+                    {aiLoading ? (
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        <p className="text-sm">Generating AI summary...</p>
+                      </div>
+                    ) : aiSummary ? (
+                      <p className="text-gray-700 text-sm leading-relaxed">{aiSummary.summary}</p>
+                    ) : null}
+                  </div>
+
+                  {/* Trading Insight */}
+                  {aiSummary && !aiLoading && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xl">💡</span>
+                        <h3 className="text-md font-semibold text-gray-800">Trading Insight for PolyMarket</h3>
+                      </div>
+                      <p className="text-gray-700 text-sm leading-relaxed font-medium">{aiSummary.tradingInsight}</p>
+                      {aiSummary.cached && (
+                        <p className="text-xs text-gray-500 mt-2 italic">⚡ Cached result</p>
+                      )}
+                    </div>
+                  )}
+
+                  <hr className="border-gray-200 mb-4" />
+                </div>
+              )}
+
               {/* Excerpts Section */}
               <div className="mb-6">
                 <div className="flex items-center gap-2 mb-4">
@@ -272,15 +354,11 @@ function KeywordContextModal({ isOpen, onClose, ticker, keyword }) {
                 )}
               </div>
 
-              {/* TODO: Add AI summary section here tomorrow */}
-              {/* Will call POST /api/generate-summary */}
-              {/* Display above excerpts */}
-
               {/* Note */}
-              <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="mt-6 bg-gray-100 border border-gray-300 rounded-lg p-4">
                 <p className="text-sm text-gray-700">
                   <strong>Note:</strong> Context from most recent quarter ({contextData.quarter}).
-                  AI summary coming soon!
+                  {aiError && ' AI summary temporarily unavailable.'}
                 </p>
               </div>
             </>
