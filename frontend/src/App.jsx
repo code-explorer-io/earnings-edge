@@ -54,6 +54,9 @@ function App() {
   // Ref for auto-scrolling to results
   const resultsRef = useRef(null);
 
+  // Ref for InputForm reset function
+  const inputFormResetRef = useRef(null);
+
   // Initialize credit system on mount
   useEffect(() => {
     const creditInfo = initializeCreditSystem();
@@ -176,6 +179,9 @@ function App() {
       setProgressStatus('Finalizing results...');
       setProgress(95);
 
+      // Ensure progress bar shows for at least 500ms before showing results
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       setAnalysisResults(analysisData);
       setProgress(100);
 
@@ -290,6 +296,26 @@ function App() {
     window.URL.revokeObjectURL(url);
   };
 
+  const handleStartNewAnalysis = () => {
+    // Clear all analysis results
+    setAnalysisResults(null);
+    setFocusedWords([]);
+    setShowHighConsistency(false);
+    setError(null);
+    setPolymarketData(null);
+
+    // Reset InputForm state via ref
+    if (inputFormResetRef.current) {
+      inputFormResetRef.current();
+    }
+
+    // Scroll to top smoothly
+    window.scrollTo({
+      behavior: 'smooth',
+      top: 0
+    });
+  };
+
   return (
     <div className={`app ${darkMode ? 'dark-mode' : ''}`}>
       {/* Skip to main content link for accessibility */}
@@ -380,7 +406,7 @@ function App() {
         {/* Analyze Tab Content */}
         {activeTab === 'analyze' && (
           <>
-            <InputForm onAnalyze={handleAnalyze} loading={loading} />
+            <InputForm onAnalyze={handleAnalyze} loading={loading} onResetRef={inputFormResetRef} />
 
         {error && (
           <div className="error-message" role="alert" aria-live="assertive">
@@ -407,9 +433,14 @@ function App() {
               <h2>
                 Results for {analysisResults.ticker}
               </h2>
-              <button className="export-btn" onClick={handleExportCSV}>
-                📥 Export CSV
-              </button>
+              <div className="results-header-actions">
+                <button className="new-analysis-btn" onClick={handleStartNewAnalysis}>
+                  ↻ Start New Analysis
+                </button>
+                <button className="export-btn" onClick={handleExportCSV}>
+                  📥 Export CSV
+                </button>
+              </div>
             </div>
 
             {/* Word Filter */}

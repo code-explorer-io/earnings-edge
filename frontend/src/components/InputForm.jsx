@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import './InputForm.css';
 import { top100Companies, searchCompanies } from '../data/top100Companies';
 
-function InputForm({ onAnalyze, loading }) {
+function InputForm({ onAnalyze, loading, onResetRef }) {
   const [viewMode, setViewMode] = useState('input'); // 'input' or 'preview'
   const [companyInput, setCompanyInput] = useState('');
   const [textInput, setTextInput] = useState('');
@@ -122,6 +122,27 @@ function InputForm({ onAnalyze, loading }) {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  // Reset all form state (exposed to parent via ref)
+  const handleCompleteReset = () => {
+    setViewMode('input');
+    setCompanyInput('');
+    setTextInput('');
+    setExtractedWords([]);
+    setSelectedWords(new Set());
+    setCustomWord('');
+    setValidationError(null);
+    setShowAutocomplete(false);
+    setFilteredCompanies([]);
+    setSelectedIndex(-1);
+  };
+
+  // Expose reset function to parent component
+  useEffect(() => {
+    if (onResetRef) {
+      onResetRef.current = handleCompleteReset;
+    }
+  }, [onResetRef]);
 
   // Smart text extraction
   const extractKeywords = (text) => {
