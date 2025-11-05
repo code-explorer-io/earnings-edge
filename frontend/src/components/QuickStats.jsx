@@ -150,27 +150,12 @@ function QuickStats({ data, focusedWords, showHighConsistency, onWordClick, poly
               <div style={{ fontSize: '1.05rem', color: '#6b7280', marginTop: '2px', fontWeight: '600' }}>
                 ({wordData.consistencyPercent}% consistency)
               </div>
-              <div style={{
-                fontSize: '1.05rem',
-                fontWeight: 'bold',
-                marginTop: '6px',
-                color: getTrafficLightColor(wordData.trafficLight)
-              }}>
-                Bond Rating: {wordData.bondRating}
-              </div>
             </div>
 
-            {/* Trading Recommendation */}
+            {/* Mention Pattern */}
             <div className="recommendation-box" style={{
-              backgroundColor:
-                wordData.recommendation === 'BUY' ? '#10b98115' :
-                wordData.recommendation === 'AVOID' ? '#ef444415' :
-                '#f59e0b15',
-              border: `2px solid ${
-                wordData.recommendation === 'BUY' ? '#10b981' :
-                wordData.recommendation === 'AVOID' ? '#ef4444' :
-                '#f59e0b'
-              }`,
+              backgroundColor: '#3b82f615',
+              border: '2px solid #3b82f6',
               borderRadius: '8px',
               padding: '12px',
               marginBottom: '12px',
@@ -179,14 +164,12 @@ function QuickStats({ data, focusedWords, showHighConsistency, onWordClick, poly
               <div style={{
                 fontSize: '1.3rem',
                 fontWeight: 'bold',
-                color: wordData.recommendation === 'BUY' ? '#10b981' :
-                       wordData.recommendation === 'AVOID' ? '#ef4444' :
-                       '#f59e0b'
+                color: '#3b82f6'
               }}>
-                💡 {wordData.recommendation}
+                📊 Frequency: {wordData.quartersMentioned}/{wordData.totalQuarters} Quarters
               </div>
               <div style={{ fontSize: '1rem', color: '#6b7280', marginTop: '6px', fontStyle: 'italic' }}>
-                {wordData.recommendationReason}
+                {wordData.consistencyPercent}% consistency across historical earnings calls
               </div>
             </div>
 

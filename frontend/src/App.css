@@ -1,8 +1,30 @@
+/* Skip to main content link for accessibility */
+.skip-to-main {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #667eea;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  text-decoration: none;
+  font-weight: 600;
+  border-radius: 0 0 8px 0;
+  z-index: 100;
+  transition: top 0.3s;
+}
+
+.skip-to-main:focus {
+  top: 0;
+  outline: 2px solid white;
+  outline-offset: -2px;
+}
+
 .app {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   transition: background-color 0.3s ease, color 0.3s ease;
+  position: relative;
 }
 
 /* Dark Mode Styles - Monochromatic Minimalism with Navy Blue */
@@ -141,13 +163,35 @@
 }
 
 .error-message {
-  background-color: #fee;
-  border: 1px solid #fcc;
+  background: linear-gradient(135deg, #fee 0%, #fdd 100%);
+  border: 2px solid #fcc;
   color: #c33;
-  padding: 1rem;
-  border-radius: 8px;
-  margin: 1rem 0;
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin: 2rem 0;
   text-align: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(204, 51, 51, 0.1);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.error-message::before {
+  content: '⚠️';
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 0.5rem;
 }
 
 .loading-message {
@@ -200,6 +244,15 @@
 
 .export-btn:active {
   transform: translateY(0);
+}
+
+.export-btn:focus {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+}
+
+.export-btn:focus:not(:focus-visible) {
+  outline: none;
 }
 
 .app-footer {
@@ -287,6 +340,16 @@
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
+}
+
+.tab:focus {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.tab:focus:not(:focus-visible) {
+  outline: none;
 }
 
 .dark-mode .tab {

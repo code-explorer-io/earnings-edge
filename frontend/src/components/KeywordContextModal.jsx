@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { celebrateAiSummary, celebrateShareCopied } from '../utils/confetti';
 
 function KeywordContextModal({ isOpen, onClose, ticker, keyword }) {
   const [loading, setLoading] = useState(false);
@@ -113,6 +114,11 @@ function KeywordContextModal({ isOpen, onClose, ticker, keyword }) {
 
       const data = await response.json();
       setAiSummary(data);
+
+      // CONFETTI MOMENT: AI Summary loaded successfully!
+      setTimeout(() => {
+        celebrateAiSummary();
+      }, 300);
     } catch (err) {
       console.error('Error fetching AI summary:', err);
       setAiError(true);
@@ -158,10 +164,14 @@ function KeywordContextModal({ isOpen, onClose, ticker, keyword }) {
     return `${baseUrl}/?${params.toString()}`;
   };
 
-  const shareContext = async () => {
+  const shareContext = async (event) => {
     const shareUrl = generateShareUrl();
     try {
       await navigator.clipboard.writeText(shareUrl);
+
+      // CONFETTI MOMENT: Share link copied!
+      celebrateShareCopied(event);
+
       alert('Share link copied to clipboard!');
     } catch (err) {
       console.error('Failed to copy share link:', err);
@@ -194,7 +204,7 @@ function KeywordContextModal({ isOpen, onClose, ticker, keyword }) {
             <div className="flex items-start gap-2">
               {contextData && (
                 <button
-                  onClick={shareContext}
+                  onClick={(e) => shareContext(e)}
                   className="text-white hover:text-blue-200 text-sm px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded transition-colors"
                   title="Share this context"
                 >

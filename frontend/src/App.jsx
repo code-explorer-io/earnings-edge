@@ -10,6 +10,8 @@ import CreditCounter from './components/CreditCounter';
 import CreditWarningModal from './components/CreditWarningModal';
 import CreditInfoPage from './components/CreditInfoPage';
 import Toast from './components/Toast';
+import ProgressBar from './components/ProgressBar';
+import EmptyState from './components/EmptyState';
 import {
   initializeCreditSystem,
   deductCredits,
@@ -18,6 +20,13 @@ import {
   checkAndRefreshDailyCredits
 } from './utils/creditManager';
 import { initializeAdminHelpers } from './utils/adminHelpers';
+import {
+  celebrateAnalysisComplete,
+  celebrateFirstAnalysis,
+  celebratePerfectConsistency,
+  isFirstAnalysis,
+  markFirstAnalysisComplete
+} from './utils/confetti';
 
 // Use environment variable for API URL, fallback to production API, or localhost for dev
 const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.MODE === 'production' ? '/api' : 'http://localhost:3001/api');
@@ -25,6 +34,8 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.MODE === '
 function App() {
   const [activeTab, setActiveTab] = useState('analyze'); // 'analyze', 'calculator', 'about', 'credits-info'
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [progressStatus, setProgressStatus] = useState('');
   const [error, setError] = useState(null);
   const [analysisResults, setAnalysisResults] = useState(null);
   const [focusedWords, setFocusedWords] = useState([]); // Multi-select array
@@ -76,6 +87,8 @@ function App() {
     }
 
     setLoading(true);
+    setProgress(0);
+    setProgressStatus('Fetching transcripts...');
     setError(null);
     setAnalysisResults(null);
     setFocusedWords([]);
@@ -83,7 +96,8 @@ function App() {
     setPolymarketData(polymarketData);
 
     try {
-      // Step 1: Fetch transcripts
+      // Step 1: Fetch transcripts (0-30%)
+      setProgress(10);
       const transcriptResponse = await fetch(`${API_BASE_URL}/transcripts/${ticker}`);
 
       if (!transcriptResponse.ok) {
@@ -92,8 +106,11 @@ function App() {
       }
 
       const transcriptData = await transcriptResponse.json();
+      setProgress(30);
 
-      // Step 2: Analyze word frequency
+      // Step 2: Analyze word frequency (30-60%)
+      setProgressStatus('Analyzing keyword patterns...');
+      setProgress(40);
       const analysisResponse = await fetch(`${API_BASE_URL}/analyze`, {
         method: 'POST',
         headers: {
@@ -112,7 +129,42 @@ function App() {
       }
 
       const analysisData = await analysisResponse.json();
+      setProgress(60);
+
+      // Step 3: Processing results (60-90%)
+      setProgressStatus('Calculating consistency scores...');
+      setProgress(75);
+
+      // Simulate processing time for better UX
+      await new Promise(resolve => setTimeout(resolve, 300));
+      setProgress(90);
+
+      setProgressStatus('Finalizing results...');
+      setProgress(95);
+
       setAnalysisResults(analysisData);
+      setProgress(100);
+
+      // CONFETTI MOMENTS!
+      // Check if this is user's first analysis ever
+      if (isFirstAnalysis()) {
+        celebrateFirstAnalysis();
+        markFirstAnalysisComplete();
+      } else {
+        // Regular analysis complete celebration
+        celebrateAnalysisComplete();
+      }
+
+      // Check for perfect consistency (100%) keywords
+      const perfectKeywords = analysisData.wordFrequency?.filter(
+        wordData => parseFloat(wordData.consistencyPercent) === 100
+      );
+      if (perfectKeywords && perfectKeywords.length > 0) {
+        // Delay slightly so confetti doesn't overlap with analysis complete
+        setTimeout(() => {
+          celebratePerfectConsistency();
+        }, 1000);
+      }
 
       // Deduct credit after successful analysis
       const deductionResult = deductCredits(1);
@@ -191,6 +243,20 @@ function App() {
 
   return (
     <div className={`app ${darkMode ? 'dark-mode' : ''}`}>
+      {/* Skip to main content link for accessibility */}
+      <a href="#main-content" className="skip-to-main">
+        Skip to main content
+      </a>
+
+      {/* Toast Notifications */}
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        duration={toast.duration}
+        onClose={() => setToast({ ...toast, visible: false })}
+      />
+
       <header className="app-header">
         <div className="header-left">
           <button
@@ -222,53 +288,68 @@ function App() {
       />
 
       {/* Tab Navigation */}
-      <nav className="tabs-container">
+      <nav className="tabs-container" role="navigation" aria-label="Main navigation">
         <button
           className={`tab ${activeTab === 'analyze' ? 'active' : ''}`}
           onClick={() => setActiveTab('analyze')}
+          aria-label="Analyze earnings calls"
+          aria-current={activeTab === 'analyze' ? 'page' : undefined}
         >
-          <span className="tab-icon">🔍</span>
+          <span className="tab-icon" aria-hidden="true">🔍</span>
           <span className="tab-label">Analyze</span>
         </button>
         <button
           className={`tab ${activeTab === 'calculator' ? 'active' : ''}`}
           onClick={() => setActiveTab('calculator')}
+          aria-label="PolyMarket calculator"
+          aria-current={activeTab === 'calculator' ? 'page' : undefined}
         >
-          <span className="tab-icon">💰</span>
+          <span className="tab-icon" aria-hidden="true">💰</span>
           <span className="tab-label">Calculator</span>
         </button>
         <button
           className={`tab ${activeTab === 'about' ? 'active' : ''}`}
           onClick={() => setActiveTab('about')}
+          aria-label="About this application"
+          aria-current={activeTab === 'about' ? 'page' : undefined}
         >
-          <span className="tab-icon">📖</span>
+          <span className="tab-icon" aria-hidden="true">📖</span>
           <span className="tab-label">About</span>
         </button>
         <button
           className={`tab ${activeTab === 'credits-info' ? 'active' : ''}`}
           onClick={() => setActiveTab('credits-info')}
+          aria-label="Learn how credits work"
+          aria-current={activeTab === 'credits-info' ? 'page' : undefined}
         >
-          <span className="tab-icon">⚡</span>
+          <span className="tab-icon" aria-hidden="true">⚡</span>
           <span className="tab-label">How Credits Work</span>
         </button>
       </nav>
 
-      <main className="app-main">
+      <main className="app-main" id="main-content">
         {/* Analyze Tab Content */}
         {activeTab === 'analyze' && (
           <>
             <InputForm onAnalyze={handleAnalyze} loading={loading} />
 
         {error && (
-          <div className="error-message">
-            ⚠️ Error: {error}
+          <div className="error-message" role="alert" aria-live="assertive">
+            {error}
           </div>
         )}
 
         {loading && (
-          <div className="loading-message">
-            🔄 Analyzing transcripts...
+          <div role="status" aria-live="polite" aria-busy="true">
+            <ProgressBar
+              status={progressStatus}
+              progress={progress}
+            />
           </div>
+        )}
+
+        {!loading && !error && !analysisResults && (
+          <EmptyState darkMode={darkMode} />
         )}
 
         {analysisResults && (
@@ -442,8 +523,14 @@ function App() {
           </div>
           <div style={{ textAlign: 'right' }}>
             <p style={{ margin: 0 }}>Built for PolyMarket traders • Data from last 8 quarters</p>
-            <p style={{ fontSize: '0.85rem', color: darkMode ? '#888888' : '#888', marginTop: '5px', margin: 0 }}>
-              Data presentation only, not financial advice
+            <p style={{
+              fontSize: '0.9rem',
+              color: darkMode ? '#fbbf24' : '#d97706',
+              marginTop: '8px',
+              margin: 0,
+              fontWeight: '600'
+            }}>
+              ⚠️ Analysis tool only. Not financial or trading advice.
             </p>
           </div>
         </div>

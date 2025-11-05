@@ -47,8 +47,14 @@
   border-bottom: 1px solid #f3f4f6;
 }
 
+.results-table tbody tr {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .results-table tbody tr:hover {
   background-color: #f9fafb;
+  transform: scale(1.005);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .word-cell {
@@ -68,21 +74,23 @@
   background: none;
   border: none;
   cursor: pointer;
-  padding: 0;
+  padding: 0.25rem;
   margin-left: 0.5rem;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   line-height: 1;
   display: inline-flex;
   align-items: center;
+  border-radius: 4px;
 }
 
 .context-icon-button:hover {
   color: #2563eb;
-  transform: scale(1.1);
+  transform: scale(1.2) rotate(10deg);
+  background: rgba(37, 99, 235, 0.1);
 }
 
 .context-icon-button:active {
-  transform: scale(0.95);
+  transform: scale(1.1) rotate(5deg);
 }
 
 .count-cell {

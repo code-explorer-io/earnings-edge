@@ -70,7 +70,6 @@ function ResultsTable({ data, focusedWords, showHighConsistency, ticker }) {
               <th className="total-column">Total</th>
               <th className="consistency-column" title="Percentage of quarters mentioned">Consistency</th>
               <th className="quarters-mentioned-column" title="Number of quarters with mentions">Qtrs Mentioned</th>
-              <th className="bond-rating-column" title="Bond rating based on consistency">Bond Rating</th>
             </tr>
           </thead>
           <tbody>
@@ -122,9 +121,6 @@ function ResultsTable({ data, focusedWords, showHighConsistency, ticker }) {
                 </td>
                 <td className="quarters-mentioned-cell">
                   {wordData.quartersMentioned}/{wordData.totalQuarters}
-                </td>
-                <td className="bond-rating-cell">
-                  <strong>{wordData.bondRating}</strong>
                 </td>
               </tr>
               );
