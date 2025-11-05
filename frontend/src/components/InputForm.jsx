@@ -127,7 +127,28 @@ function InputForm({ onAnalyze, loading }) {
   const extractKeywords = (text) => {
     if (!text || !text.trim()) return [];
 
-    // FIRST: Split on " / " pattern to handle variations (e.g., "Shutdown / Shut Down")
+    // FIRST CHECK: Simple manual input detection
+    // If text looks like manual input (comma-separated or newline-separated words),
+    // extract them directly without complex parsing
+    const manualKeywords = text
+      .split(/[\n,]+/)  // Split by newlines OR commas
+      .map(k => k.trim())  // Trim whitespace
+      .filter(k => k.length > 0)  // Remove empty strings
+      .filter(k => !junkWords.has(k.toLowerCase()));  // Remove junk words
+
+    // If all lines are simple (no complex punctuation/structure), treat as manual input
+    const looksLikeManualInput = manualKeywords.length > 0 &&
+      manualKeywords.every(k => {
+        // Simple word or phrase: only letters, numbers, spaces, hyphens, apostrophes
+        return /^[\w\s'\-]+$/.test(k) && k.split(/\s+/).length <= 4;
+      });
+
+    if (looksLikeManualInput) {
+      // Remove duplicates while preserving order
+      return [...new Set(manualKeywords)];
+    }
+
+    // COMPLEX EXTRACTION: Split on " / " pattern to handle variations (e.g., "Shutdown / Shut Down")
     // Replace " / " with a unique delimiter that we'll split on later
     let preprocessed = text.replace(/\s+\/\s+/g, '|||VARIANT|||');
 

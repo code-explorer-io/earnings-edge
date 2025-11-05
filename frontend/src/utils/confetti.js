@@ -2,7 +2,7 @@ import confetti from 'canvas-confetti';
 
 // MOMENT 1: Full screen celebration (Analysis complete)
 export const celebrateAnalysisComplete = () => {
-  const duration = 3000;
+  const duration = 1500;
   const animationEnd = Date.now() + duration;
 
   const randomInRange = (min, max) => Math.random() * (max - min) + min;
@@ -14,7 +14,7 @@ export const celebrateAnalysisComplete = () => {
       return clearInterval(interval);
     }
 
-    const particleCount = 50 * (timeLeft / duration);
+    const particleCount = 25 * (timeLeft / duration);
 
     confetti({
       particleCount,
@@ -43,7 +43,7 @@ export const celebrateAiSummary = () => {
 // MOMENT 3: Perfect Consistency 100% (Medium celebration from center)
 export const celebratePerfectConsistency = () => {
   confetti({
-    particleCount: 100,
+    particleCount: 50,
     spread: 70,
     origin: { x: 0.5, y: 0.5 },
     colors: ['#4ade80', '#22c55e', '#16a34a', '#10b981']
@@ -68,7 +68,7 @@ export const celebrateShareCopied = (event) => {
 
 // MOMENT 5: First Analysis Ever (Extra big celebration - one-time only)
 export const celebrateFirstAnalysis = () => {
-  const duration = 5000;
+  const duration = 2500;
   const animationEnd = Date.now() + duration;
 
   const colors = ['#667eea', '#764ba2', '#4ade80', '#22c55e', '#3b82f6', '#f59e0b'];
@@ -80,7 +80,7 @@ export const celebrateFirstAnalysis = () => {
       return clearInterval(interval);
     }
 
-    const particleCount = 100 * (timeLeft / duration);
+    const particleCount = 50 * (timeLeft / duration);
 
     // Fire from left
     confetti({
@@ -101,7 +101,7 @@ export const celebrateFirstAnalysis = () => {
     });
 
     // Fire from center
-    if (timeLeft > 2500) {
+    if (timeLeft > 1250) {
       confetti({
         particleCount: particleCount / 2,
         spread: 360,
