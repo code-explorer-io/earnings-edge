@@ -77,18 +77,32 @@ function App() {
 
   // Auto-scroll to results after analysis and confetti
   useEffect(() => {
+    console.log('📊 Auto-scroll effect triggered');
+    console.log('analysisResults:', analysisResults);
+    console.log('resultsRef.current:', resultsRef.current);
+
     if (analysisResults && analysisResults.wordFrequency && analysisResults.wordFrequency.length > 0) {
+      console.log('✅ Conditions met, starting 3s scroll timer...');
       // Wait 3 seconds for confetti celebrations to finish
       const scrollTimer = setTimeout(() => {
+        console.log('⏰ 3 seconds passed, attempting scroll...');
         if (resultsRef.current) {
+          console.log('🎯 Scrolling to results!');
           resultsRef.current.scrollIntoView({
             behavior: 'smooth',
             block: 'start'
           });
+        } else {
+          console.log('❌ resultsRef.current is null');
         }
       }, 3000);
 
-      return () => clearTimeout(scrollTimer);
+      return () => {
+        console.log('🧹 Cleaning up scroll timer');
+        clearTimeout(scrollTimer);
+      };
+    } else {
+      console.log('❌ Conditions not met for auto-scroll');
     }
   }, [analysisResults]);
 
@@ -185,6 +199,21 @@ function App() {
           celebratePerfectConsistency();
         }, 1000);
       }
+
+      // Auto-scroll to results after confetti (backup mechanism)
+      setTimeout(() => {
+        console.log('🔄 Backup scroll mechanism triggered');
+        const resultsElement = document.getElementById('results-section');
+        if (resultsElement) {
+          console.log('📍 Found results element, scrolling...');
+          resultsElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        } else {
+          console.log('❌ Results element not found');
+        }
+      }, 3000);
 
       // Deduct credit after successful analysis
       const deductionResult = deductCredits(1);
@@ -373,7 +402,7 @@ function App() {
         )}
 
         {analysisResults && (
-          <div className="results-container" ref={resultsRef}>
+          <div className="results-container" ref={resultsRef} id="results-section">
             <div className="results-header">
               <h2>
                 Results for {analysisResults.ticker}
