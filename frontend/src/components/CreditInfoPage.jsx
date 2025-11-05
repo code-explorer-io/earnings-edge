@@ -166,27 +166,29 @@ function CreditInfoPage({ darkMode }) {
             border: darkMode ? '2px solid #2a4a3a' : '2px solid #86efac',
             borderRadius: '12px',
             padding: '1.5rem',
+            paddingTop: '3rem',
             position: 'relative',
-            overflow: 'hidden'
+            overflow: 'visible'
           }}>
             <div style={{
               position: 'absolute',
-              top: '0.75rem',
-              right: '0.75rem',
+              top: '-0.75rem',
+              right: '1.25rem',
               background: '#10b981',
               color: 'white',
-              padding: '0.35rem 0.75rem',
+              padding: '0.4rem 0.8rem',
               borderRadius: '20px',
-              fontSize: '0.75rem',
+              fontSize: '0.7rem',
               fontWeight: 'bold',
               letterSpacing: '0.5px',
-              zIndex: 1
+              zIndex: 2,
+              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
             }}>
               COMING SOON
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem', paddingRight: '6rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
               <h3 style={{ fontSize: '1.5rem', margin: 0, color: '#10b981' }}>💎 Unlimited Credits</h3>
-              <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>Pay with USDC</span>
+              <span style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#10b981' }}>Pay with USDC</span>
             </div>
             <ul style={{ paddingLeft: '1.5rem', lineHeight: '1.8', color: darkMode ? '#86efac' : '#16a34a' }}>
               <li>Buy credit bundles that never expire</li>

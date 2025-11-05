@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './App.css';
 import InputForm from './components/InputForm';
 import ResultsTable from './components/ResultsTable';
@@ -51,6 +51,9 @@ function App() {
   // Toast notification state
   const [toast, setToast] = useState({ visible: false, message: '', type: 'info' });
 
+  // Ref for auto-scrolling to results
+  const resultsRef = useRef(null);
+
   // Initialize credit system on mount
   useEffect(() => {
     const creditInfo = initializeCreditSystem();
@@ -71,6 +74,23 @@ function App() {
     // Initialize admin helpers (dev mode only)
     initializeAdminHelpers();
   }, []);
+
+  // Auto-scroll to results after analysis and confetti
+  useEffect(() => {
+    if (analysisResults && analysisResults.wordFrequency && analysisResults.wordFrequency.length > 0) {
+      // Wait 3 seconds for confetti celebrations to finish
+      const scrollTimer = setTimeout(() => {
+        if (resultsRef.current) {
+          resultsRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      }, 3000);
+
+      return () => clearTimeout(scrollTimer);
+    }
+  }, [analysisResults]);
 
   // Show toast notification
   const showToast = (message, type = 'info', duration = 3000) => {
@@ -353,7 +373,7 @@ function App() {
         )}
 
         {analysisResults && (
-          <div className="results-container">
+          <div className="results-container" ref={resultsRef}>
             <div className="results-header">
               <h2>
                 Results for {analysisResults.ticker}
