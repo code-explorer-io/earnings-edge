@@ -88,7 +88,7 @@ export function checkAndRefreshDailyCredits() {
     // It's a new day! Add daily credits
     const creditsAdded = addDailyCredits();
     localStorage.setItem(STORAGE_KEYS.LAST_REFRESH, now.toISOString());
-    console.log('🌅 New day detected! Added 5 daily credits');
+    console.log(`🌅 New day detected! Added ${creditsAdded} daily credits (max ${CREDIT_CONFIG.MAX_FREE_CREDITS})`);
 
     // Trigger confetti if credits were actually added
     if (creditsAdded > 0 && typeof window !== 'undefined') {
@@ -140,7 +140,7 @@ function triggerConfetti() {
 }
 
 /**
- * Add daily credits (max 10 free credits total)
+ * Add daily credits (max 25 free credits total for testing)
  */
 function addDailyCredits() {
   const currentCredits = getCurrentCredits();
