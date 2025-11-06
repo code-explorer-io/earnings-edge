@@ -196,10 +196,16 @@ app.get('/api/transcripts/:ticker', async (req, res) => {
       });
     }
 
-    console.log(`📡 Fetching real transcripts for ${cacheKey} from API Ninjas...`);
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`📡 FETCHING TRANSCRIPTS FOR: ${cacheKey}`);
+    console.log(`${'='.repeat(60)}`);
 
     // Fetch last 8 quarters from API Ninjas
     const transcripts = await fetchLast8Quarters(cacheKey, apiKey);
+
+    console.log(`${'='.repeat(60)}`);
+    console.log(`✓ FETCH COMPLETE FOR: ${cacheKey}`);
+    console.log(`${'='.repeat(60)}\n`);
 
     if (transcripts.length === 0) {
       console.error(`❌ No transcripts found for ${cacheKey}`);
@@ -247,51 +253,79 @@ async function fetchLast8Quarters(ticker, apiKey) {
   const currentYear = today.getFullYear();
   const currentMonth = today.getMonth(); // 0-11
 
+  console.log(`\n🕐 CURRENT DATE CALCULATION:`);
+  console.log(`   Today: ${today.toISOString()}`);
+  console.log(`   Year: ${currentYear}`);
+  console.log(`   Month: ${currentMonth} (0-indexed, so ${currentMonth + 1} in human terms)`);
+  console.log(`   Day: ${today.getDate()}`);
+
   // Determine current quarter based on month
   // Q1: Jan-Mar (0-2), Q2: Apr-Jun (3-5), Q3: Jul-Sep (6-8), Q4: Oct-Dec (9-11)
   const currentQuarter = Math.floor(currentMonth / 3) + 1;
+
+  console.log(`\n📊 QUARTER CALCULATION:`);
+  console.log(`   Formula: Math.floor(${currentMonth} / 3) + 1 = ${currentQuarter}`);
+  console.log(`   Current Quarter: Q${currentQuarter} ${currentYear}`);
 
   // Start from CURRENT quarter (not 2 quarters back)
   // This ensures we capture same-day transcripts for real-time trading value
   let year = currentYear;
   let quarter = currentQuarter;
 
-  console.log(`📅 Starting from CURRENT quarter: Q${quarter} ${year} (Today: ${today.toISOString().split('T')[0]})`);
-  console.log(`🔍 Will attempt to fetch Q${quarter} ${year} backwards for 8 quarters...`);
+  console.log(`\n📅 STARTING POINT:`);
+  console.log(`   Starting from: Q${quarter} ${year}`);
+  console.log(`   Strategy: Fetch current quarter + 7 previous = 8 total quarters`);
 
   // Generate list of quarters to fetch (current quarter + last 7 = 8 total)
   const quartersToFetch = [];
 
+  console.log(`\n🔄 GENERATING QUARTER LIST:`);
   for (let i = 0; i < 8; i++) {
     quartersToFetch.push({ year, quarter });
+    console.log(`   [${i + 1}/8] Q${quarter} ${year}`);
     quarter--;
     if (quarter === 0) {
       quarter = 4;
       year--;
+      console.log(`   → Year rollover: now at ${year}`);
     }
   }
 
   // Log all quarters we're requesting
-  console.log(`📋 Quarters to request: ${quartersToFetch.map(q => `Q${q.quarter} ${q.year}`).join(', ')}`);
+  console.log(`\n📋 FINAL QUARTERS LIST (will request in parallel):`);
+  console.log(`   ${quartersToFetch.map(q => `Q${q.quarter} ${q.year}`).join(', ')}`);
+  console.log(``);
 
 
   // Fetch each quarter (in parallel for speed)
+  console.log(`\n🚀 STARTING PARALLEL API REQUESTS...\n`);
   const promises = quartersToFetch.map(async ({ year, quarter }) => {
     try {
-      console.log(`📡 Requesting Q${quarter} ${year} for ${ticker}...`);
-      const response = await axios.get(`https://api.api-ninjas.com/v1/earningstranscript`, {
+      const apiUrl = `https://api.api-ninjas.com/v1/earningstranscript`;
+      const params = { ticker, year, quarter };
+
+      console.log(`📡 [Q${quarter} ${year}] Requesting from API Ninjas...`);
+      console.log(`   URL: ${apiUrl}`);
+      console.log(`   Params: ticker=${ticker}, year=${year}, quarter=${quarter}`);
+
+      const response = await axios.get(apiUrl, {
         headers: { 'X-Api-Key': apiKey },
-        params: {
-          ticker: ticker,
-          year: year,
-          quarter: quarter
-        },
+        params,
         timeout: 10000
       });
 
+      // Log what we received
+      console.log(`📦 [Q${quarter} ${year}] Response received (status: ${response.status})`);
+      console.log(`   Has data: ${!!response.data}`);
+      console.log(`   Has transcript field: ${!!response.data?.transcript}`);
+      if (response.data?.transcript) {
+        console.log(`   Transcript length: ${response.data.transcript.length} chars`);
+        console.log(`   Date: ${response.data.date || 'not provided'}`);
+      }
+
       // API Ninjas returns the transcript data directly
       if (response.data && response.data.transcript) {
-        console.log(`✅ SUCCESS: Q${quarter} ${year} - Found transcript (${response.data.transcript.length} chars, date: ${response.data.date})`);
+        console.log(`✅ [Q${quarter} ${year}] SUCCESS - Transcript found and valid!`);
         return {
           ticker: ticker,
           quarter: `Q${quarter} ${year}`,
@@ -301,21 +335,34 @@ async function fetchLast8Quarters(ticker, apiKey) {
           transcript: response.data.transcript
         };
       }
-      console.log(`⚠️  EMPTY: Q${quarter} ${year} - API returned data but no transcript field`);
+      console.log(`⚠️  [Q${quarter} ${year}] EMPTY - API returned but no transcript field`);
       return null;
     } catch (err) {
       if (err.response?.status === 404) {
-        console.log(`❌ NOT FOUND: Q${quarter} ${year} - No transcript available yet`);
+        console.log(`❌ [Q${quarter} ${year}] NOT FOUND (404) - Transcript not available yet`);
+      } else if (err.code === 'ECONNABORTED') {
+        console.log(`❌ [Q${quarter} ${year}] TIMEOUT - Request took longer than 10s`);
       } else {
-        console.log(`❌ ERROR: Q${quarter} ${year} - ${err.message}`);
+        console.log(`❌ [Q${quarter} ${year}] ERROR - ${err.message}`);
+        if (err.response) {
+          console.log(`   Status: ${err.response.status}`);
+          console.log(`   Data: ${JSON.stringify(err.response.data)}`);
+        }
       }
       return null;
     }
   });
 
+  console.log(`\n⏳ Waiting for all ${promises.length} parallel requests to complete...\n`);
   const results = await Promise.all(promises);
 
+  console.log(`\n📊 PROCESSING RESULTS:`);
+  console.log(`   Total requests: ${promises.length}`);
+  console.log(`   Successful: ${results.filter(r => r !== null).length}`);
+  console.log(`   Failed/Not found: ${results.filter(r => r === null).length}`);
+
   // Filter out null results and sort by date (most recent first)
+  console.log(`\n🔄 Filtering and sorting transcripts...`);
   const validTranscripts = results
     .filter(t => t !== null)
     .sort((a, b) => {
@@ -324,11 +371,18 @@ async function fetchLast8Quarters(ticker, apiKey) {
     });
 
   // Log summary of what we found
-  console.log(`📊 SUMMARY: Found ${validTranscripts.length} transcripts for ${ticker}`);
+  console.log(`\n📊 FINAL SUMMARY FOR ${ticker}:`);
+  console.log(`   ✅ Found: ${validTranscripts.length} valid transcripts`);
+
   if (validTranscripts.length > 0) {
-    const quartersList = validTranscripts.map(t => t.quarter).join(', ');
-    console.log(`📅 Available quarters: ${quartersList}`);
-    console.log(`🆕 Most recent: ${validTranscripts[0].quarter} (${validTranscripts[0].date})`);
+    console.log(`\n📅 AVAILABLE QUARTERS (sorted newest to oldest):`);
+    validTranscripts.forEach((t, idx) => {
+      const isNewest = idx === 0;
+      console.log(`   ${isNewest ? '🆕' : '  '} [${idx + 1}] ${t.quarter} (date: ${t.date}) ${t.transcript.length} chars`);
+    });
+    console.log(`\n🎯 MOST RECENT QUARTER: ${validTranscripts[0].quarter} (${validTranscripts[0].date})`);
+  } else {
+    console.log(`   ❌ No transcripts found at all!`);
   }
 
   return validTranscripts;
