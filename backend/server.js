@@ -299,34 +299,70 @@ async function fetchLast8Quarters(ticker, apiKey) {
 
   // Fetch each quarter (in parallel for speed)
   console.log(`\n🚀 STARTING PARALLEL API REQUESTS...\n`);
-  const promises = quartersToFetch.map(async ({ year, quarter }) => {
+  console.log(`⚠️  NOTE: Requests execute in parallel, so logs may be interleaved\n`);
+
+  const promises = quartersToFetch.map(async ({ year, quarter }, index) => {
+    const requestId = `[${index + 1}/8][Q${quarter} ${year}]`;
     try {
       const apiUrl = `https://api.api-ninjas.com/v1/earningstranscript`;
       const params = { ticker, year, quarter };
+      const fullUrl = `${apiUrl}?ticker=${ticker}&year=${year}&quarter=${quarter}`;
 
-      console.log(`📡 [Q${quarter} ${year}] Requesting from API Ninjas...`);
-      console.log(`   URL: ${apiUrl}`);
-      console.log(`   Params: ticker=${ticker}, year=${year}, quarter=${quarter}`);
+      console.log(`\n${'─'.repeat(70)}`);
+      console.log(`${requestId} 📡 INITIATING REQUEST`);
+      console.log(`${requestId} Ticker: ${ticker}`);
+      console.log(`${requestId} Year: ${year}`);
+      console.log(`${requestId} Quarter: ${quarter}`);
+      console.log(`${requestId} Full URL: ${fullUrl}`);
+      console.log(`${requestId} Timestamp: ${new Date().toISOString()}`);
 
+      const requestStartTime = Date.now();
       const response = await axios.get(apiUrl, {
         headers: { 'X-Api-Key': apiKey },
         params,
-        timeout: 10000
+        timeout: 10000,
+        validateStatus: () => true // Accept all status codes
       });
+      const requestDuration = Date.now() - requestStartTime;
 
-      // Log what we received
-      console.log(`📦 [Q${quarter} ${year}] Response received (status: ${response.status})`);
-      console.log(`   Has data: ${!!response.data}`);
-      console.log(`   Has transcript field: ${!!response.data?.transcript}`);
-      if (response.data?.transcript) {
-        console.log(`   Transcript length: ${response.data.transcript.length} chars`);
-        console.log(`   Date: ${response.data.date || 'not provided'}`);
+      console.log(`${'─'.repeat(70)}`);
+      console.log(`${requestId} 📦 RESPONSE RECEIVED (${requestDuration}ms)`);
+      console.log(`${requestId} HTTP Status: ${response.status} ${response.statusText}`);
+      console.log(`${requestId} Content-Type: ${response.headers['content-type']}`);
+
+      if (response.data) {
+        const dataKeys = Object.keys(response.data);
+        console.log(`${requestId} Response has keys: ${dataKeys.join(', ')}`);
+        console.log(`${requestId} Has 'transcript': ${!!response.data.transcript}`);
+        console.log(`${requestId} Has 'date': ${!!response.data.date}`);
+        console.log(`${requestId} Has 'error': ${!!response.data.error}`);
+
+        if (response.data.transcript) {
+          const transcriptLength = response.data.transcript.length;
+          const preview = response.data.transcript.substring(0, 80).replace(/\n/g, ' ');
+          console.log(`${requestId} Transcript length: ${transcriptLength} chars`);
+          console.log(`${requestId} Preview: "${preview}..."`);
+          console.log(`${requestId} Date: ${response.data.date || 'NOT PROVIDED BY API'}`);
+        } else {
+          console.log(`${requestId} ⚠️  'transcript' field is missing or empty!`);
+          console.log(`${requestId} Full response: ${JSON.stringify(response.data).substring(0, 200)}`);
+        }
+      } else {
+        console.log(`${requestId} ⚠️  No data in response!`);
       }
 
-      // API Ninjas returns the transcript data directly
+      // Check HTTP status
+      if (response.status !== 200) {
+        console.log(`${requestId} ❌ Non-200 status code: ${response.status}`);
+        console.log(`${requestId} → Returning null`);
+        return null;
+      }
+
+      // Check for transcript data
       if (response.data && response.data.transcript) {
-        console.log(`✅ [Q${quarter} ${year}] SUCCESS - Transcript found and valid!`);
-        return {
+        console.log(`${requestId} ✅ SUCCESS - Valid transcript found!`);
+
+        const result = {
           ticker: ticker,
           quarter: `Q${quarter} ${year}`,
           year: year,
@@ -334,21 +370,38 @@ async function fetchLast8Quarters(ticker, apiKey) {
           date: response.data.date || `${quarter * 3}/15/${year}`,
           transcript: response.data.transcript
         };
+
+        console.log(`${requestId} → Returning transcript object: Q${quarter} ${year}, ${result.transcript.length} chars`);
+        return result;
       }
-      console.log(`⚠️  [Q${quarter} ${year}] EMPTY - API returned but no transcript field`);
+
+      console.log(`${requestId} ⚠️  EMPTY - No valid transcript in response`);
+      console.log(`${requestId} → Returning null`);
       return null;
+
     } catch (err) {
-      if (err.response?.status === 404) {
-        console.log(`❌ [Q${quarter} ${year}] NOT FOUND (404) - Transcript not available yet`);
-      } else if (err.code === 'ECONNABORTED') {
-        console.log(`❌ [Q${quarter} ${year}] TIMEOUT - Request took longer than 10s`);
+      console.log(`${'─'.repeat(70)}`);
+      console.log(`${requestId} ❌ EXCEPTION CAUGHT`);
+      console.log(`${requestId} Error type: ${err.constructor.name}`);
+      console.log(`${requestId} Error message: ${err.message}`);
+      console.log(`${requestId} Error code: ${err.code || 'none'}`);
+
+      if (err.response) {
+        console.log(`${requestId} Response status: ${err.response.status}`);
+        console.log(`${requestId} Response data: ${JSON.stringify(err.response.data)}`);
+      } else if (err.request) {
+        console.log(`${requestId} No response received (network error?)`);
       } else {
-        console.log(`❌ [Q${quarter} ${year}] ERROR - ${err.message}`);
-        if (err.response) {
-          console.log(`   Status: ${err.response.status}`);
-          console.log(`   Data: ${JSON.stringify(err.response.data)}`);
-        }
+        console.log(`${requestId} Error setting up request: ${err.message}`);
       }
+
+      if (err.response?.status === 404) {
+        console.log(`${requestId} → 404: Transcript not available on API Ninjas yet`);
+      } else if (err.code === 'ECONNABORTED') {
+        console.log(`${requestId} → TIMEOUT: Request exceeded 10 seconds`);
+      }
+
+      console.log(`${requestId} → Returning null`);
       return null;
     }
   });
