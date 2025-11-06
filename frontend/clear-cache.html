@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear EarningsEdge Backend Cache</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            max-width: 700px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #0a1929;
+            color: #E0E0E0;
+        }
+        .container {
+            background: #1e1e1e;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+        h1 {
+            color: #667eea;
+            margin-top: 0;
+        }
+        .info-box {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #667eea;
+        }
+        .warning {
+            background: #3a2a1a;
+            border-left-color: #f59e0b;
+            color: #fbbf24;
+        }
+        .success {
+            background: #1e3a2a;
+            border-left-color: #10b981;
+            color: #10b981;
+        }
+        .error {
+            background: #3a1e1e;
+            border-left-color: #ef4444;
+            color: #fca5a5;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px 10px 10px 0;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 2px solid #444;
+            background: #0a0a0a;
+            color: #E0E0E0;
+            font-size: 16px;
+            margin: 10px 0;
+            box-sizing: border-box;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: 600;
+            color: #8b5cf6;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗑️ EarningsEdge Cache Manager</h1>
+
+        <div class="info-box warning">
+            ⚠️ <strong>Purpose:</strong> Clear backend cache to fetch fresh transcript data from API Ninjas.
+            <br><br>
+            <strong>Use this when:</strong> Production shows old data but localhost shows new data (Q3 2025 for UBER, etc.)
+        </div>
+
+        <h2>Clear Specific Ticker</h2>
+        <label for="tickerInput">Ticker Symbol (e.g., UBER, LYFT)</label>
+        <input
+            type="text"
+            id="tickerInput"
+            placeholder="Enter ticker symbol..."
+            value="UBER"
+        >
+        <button onclick="clearTickerCache()" id="clearTickerBtn">
+            Clear Cache for Ticker
+        </button>
+
+        <h2>Or Clear All Cache</h2>
+        <button onclick="clearAllCache()" class="danger" id="clearAllBtn">
+            🗑️ Clear ALL Cache
+        </button>
+
+        <div id="message" style="margin-top: 20px;"></div>
+
+        <div class="info-box" style="margin-top: 30px;">
+            <strong>How it works:</strong><br>
+            • Calls backend API to clear cached transcript data<br>
+            • Next search will fetch fresh data from API Ninjas<br>
+            • Cache normally expires after 4 hours automatically<br>
+            • Use this for immediate refresh
+        </div>
+    </div>
+
+    <script>
+        function showMessage(text, className = 'success') {
+            const msgDiv = document.getElementById('message');
+            msgDiv.className = 'info-box ' + className;
+            msgDiv.innerHTML = text;
+        }
+
+        function disableButtons() {
+            document.getElementById('clearTickerBtn').disabled = true;
+            document.getElementById('clearAllBtn').disabled = true;
+        }
+
+        function enableButtons() {
+            document.getElementById('clearTickerBtn').disabled = false;
+            document.getElementById('clearAllBtn').disabled = false;
+        }
+
+        async function clearTickerCache() {
+            const ticker = document.getElementById('tickerInput').value.trim().toUpperCase();
+
+            if (!ticker) {
+                showMessage('⚠️ Please enter a ticker symbol', 'warning');
+                return;
+            }
+
+            disableButtons();
+            showMessage('⏳ Clearing cache for ' + ticker + '...', 'warning');
+
+            try {
+                const response = await fetch('/api/admin/clear-cache', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ ticker: ticker })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage(
+                        `✅ <strong>Success!</strong><br><br>` +
+                        `${data.message}<br><br>` +
+                        `<strong>Next step:</strong> Go back to the main app and search for ${ticker} again to get fresh data.`,
+                        'success'
+                    );
+                } else {
+                    showMessage(
+                        `⚠️ <strong>Not found</strong><br><br>` +
+                        `${data.message}<br><br>` +
+                        `This is OK - it means no cache existed for ${ticker}.`,
+                        'warning'
+                    );
+                }
+            } catch (error) {
+                showMessage(
+                    `❌ <strong>Error</strong><br><br>` +
+                    `Failed to clear cache: ${error.message}<br><br>` +
+                    `Make sure you're accessing this page from the same domain as your backend.`,
+                    'error'
+                );
+            } finally {
+                enableButtons();
+            }
+        }
+
+        async function clearAllCache() {
+            if (!confirm('⚠️ Clear ALL cached transcript data?\n\nThis will force all tickers to fetch fresh data on next search.')) {
+                return;
+            }
+
+            disableButtons();
+            showMessage('⏳ Clearing all cache...', 'warning');
+
+            try {
+                const response = await fetch('/api/admin/clear-cache', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({})
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage(
+                        `✅ <strong>All Cache Cleared!</strong><br><br>` +
+                        `${data.message}<br><br>` +
+                        `<strong>Next step:</strong> Go back to the main app. All searches will now fetch fresh data.`,
+                        'success'
+                    );
+                } else {
+                    showMessage(
+                        `❌ <strong>Failed</strong><br><br>${data.message}`,
+                        'error'
+                    );
+                }
+            } catch (error) {
+                showMessage(
+                    `❌ <strong>Error</strong><br><br>` +
+                    `Failed to clear cache: ${error.message}<br><br>` +
+                    `Make sure you're accessing this page from the same domain as your backend.`,
+                    'error'
+                );
+            } finally {
+                enableButtons();
+            }
+        }
+
+        // Allow Enter key to submit
+        document.getElementById('tickerInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                clearTickerCache();
+            }
+        });
+
+        // Show initial instruction
+        showMessage('👆 Enter a ticker symbol above and click "Clear Cache for Ticker" to refresh that stock\'s data.', 'warning');
+    </script>
+</body>
+</html>

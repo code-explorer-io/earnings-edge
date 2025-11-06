@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset EarningsEdge Credits</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #0a1929;
+            color: #E0E0E0;
+        }
+        .container {
+            background: #1e1e1e;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+        h1 {
+            color: #667eea;
+            margin-top: 0;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px 10px 10px 0;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        .info {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #667eea;
+        }
+        .success {
+            background: #1e3a2a;
+            border-left-color: #10b981;
+            color: #10b981;
+        }
+        .current {
+            font-size: 24px;
+            font-weight: bold;
+            color: #10b981;
+        }
+        code {
+            background: #0a0a0a;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 EarningsEdge Credit Manager</h1>
+
+        <div class="info">
+            <strong>Current Credits:</strong> <span class="current" id="currentCredits">Loading...</span>
+        </div>
+
+        <div class="info">
+            <strong>Configuration:</strong><br>
+            • Welcome Credits: 10<br>
+            • Daily Credits: <strong>25</strong> (increased for testing)<br>
+            • Max Free Credits: <strong>25</strong><br>
+            • Cost per Analysis: 1
+        </div>
+
+        <h2>Quick Actions:</h2>
+
+        <button onclick="setCredits(25)">Set Credits to 25</button>
+        <button onclick="setCredits(10)">Set Credits to 10</button>
+        <button onclick="setCredits(5)">Set Credits to 5</button>
+        <button onclick="refreshDaily()">Force Daily Refresh</button>
+        <button onclick="clearAll()">Clear All Data</button>
+
+        <div id="message" style="margin-top: 20px;"></div>
+
+        <div class="info" style="margin-top: 30px;">
+            <strong>Manual Commands:</strong><br>
+            Open browser console (F12) and run:<br><br>
+            <code>localStorage.setItem('earningsEdgeCredits', '25')</code><br>
+            <code>location.reload()</code>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEYS = {
+            CREDITS: 'earningsEdgeCredits',
+            WELCOME_USED: 'earningsEdgeWelcomeUsed',
+            LAST_REFRESH: 'earningsEdgeLastRefresh',
+            SESSION_ID: 'earningsEdgeSessionId',
+            PURCHASED_CREDITS: 'earningsEdgePurchasedCredits'
+        };
+
+        function getCurrentCredits() {
+            const credits = localStorage.getItem(STORAGE_KEYS.CREDITS);
+            return credits ? parseInt(credits, 10) : 0;
+        }
+
+        function updateDisplay() {
+            document.getElementById('currentCredits').textContent = getCurrentCredits();
+        }
+
+        function showMessage(text, isSuccess = true) {
+            const msgDiv = document.getElementById('message');
+            msgDiv.className = 'info ' + (isSuccess ? 'success' : '');
+            msgDiv.textContent = text;
+            setTimeout(() => {
+                msgDiv.textContent = '';
+                msgDiv.className = '';
+            }, 3000);
+        }
+
+        function setCredits(amount) {
+            localStorage.setItem(STORAGE_KEYS.CREDITS, amount.toString());
+            updateDisplay();
+            showMessage(`✅ Credits set to ${amount}! Refresh the main app to see changes.`);
+        }
+
+        function refreshDaily() {
+            // Set last refresh to yesterday to trigger daily refresh
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            localStorage.setItem(STORAGE_KEYS.LAST_REFRESH, yesterday.toISOString());
+            localStorage.setItem(STORAGE_KEYS.WELCOME_USED, 'true');
+
+            // Add 25 daily credits (up to max of 25)
+            const current = getCurrentCredits();
+            const newAmount = Math.min(current + 25, 25);
+            localStorage.setItem(STORAGE_KEYS.CREDITS, newAmount.toString());
+
+            updateDisplay();
+            showMessage(`✅ Forced daily refresh! Added credits. Total: ${newAmount}`);
+        }
+
+        function clearAll() {
+            if (confirm('Clear all EarningsEdge data? You will start fresh with 10 welcome credits.')) {
+                Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
+                localStorage.removeItem('earningsEdgeSeenIntro');
+                localStorage.removeItem('hasCompletedFirstAnalysis');
+                updateDisplay();
+                showMessage('✅ All data cleared! Refresh the main app to restart.');
+            }
+        }
+
+        // Update display on load
+        updateDisplay();
+
+        // Auto-refresh display every second
+        setInterval(updateDisplay, 1000);
+    </script>
+</body>
+</html>

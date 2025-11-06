@@ -115,7 +115,7 @@ app.use('/api/', apiLimiter);
 
 // In-memory cache for transcripts with TTL (Time To Live)
 const transcriptCache = new Map();
-const CACHE_TTL = 4 * 60 * 60 * 1000; // 4 hours - allows same-day updates while reducing API calls
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutes - allows frequent updates for testing while reducing API calls
 
 // Helper functions for cache with TTL
 function setCacheWithTTL(key, value) {
