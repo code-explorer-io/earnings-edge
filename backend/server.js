@@ -113,12 +113,64 @@ const apiLimiter = rateLimit({
 // Apply rate limiting to all /api/* routes
 app.use('/api/', apiLimiter);
 
-// In-memory cache for transcripts
+// In-memory cache for transcripts with TTL (Time To Live)
 const transcriptCache = new Map();
+const CACHE_TTL = 4 * 60 * 60 * 1000; // 4 hours - allows same-day updates while reducing API calls
+
+// Helper functions for cache with TTL
+function setCacheWithTTL(key, value) {
+  transcriptCache.set(key, {
+    data: value,
+    expiry: Date.now() + CACHE_TTL,
+    cachedAt: new Date().toISOString()
+  });
+  console.log(`💾 Cached ${key} (expires in 4 hours at ${new Date(Date.now() + CACHE_TTL).toLocaleString()})`);
+}
+
+function getCacheIfValid(key) {
+  const cached = transcriptCache.get(key);
+  if (cached) {
+    if (cached.expiry > Date.now()) {
+      const hoursLeft = ((cached.expiry - Date.now()) / (1000 * 60 * 60)).toFixed(1);
+      console.log(`✓ Cache HIT for ${key} (cached ${cached.cachedAt}, expires in ${hoursLeft}h)`);
+      return cached.data;
+    } else {
+      console.log(`⏰ Cache EXPIRED for ${key} (was cached ${cached.cachedAt})`);
+      transcriptCache.delete(key);
+    }
+  }
+  console.log(`❌ Cache MISS for ${key}`);
+  return null;
+}
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
+});
+
+// Admin endpoint to clear cache (useful for forcing fresh data)
+app.post('/api/admin/clear-cache', (req, res) => {
+  const { ticker } = req.body;
+
+  if (ticker) {
+    const cacheKey = ticker.toUpperCase();
+    const deleted = transcriptCache.delete(cacheKey);
+    console.log(`🗑️  Manual cache clear requested for ${cacheKey}: ${deleted ? 'SUCCESS' : 'NOT FOUND'}`);
+    res.json({
+      success: deleted,
+      message: deleted
+        ? `Cache cleared for ${cacheKey}. Next request will fetch fresh data.`
+        : `No cache found for ${cacheKey}.`
+    });
+  } else {
+    const cacheSize = transcriptCache.size;
+    transcriptCache.clear();
+    console.log(`🗑️  Manual cache clear requested: Cleared ALL ${cacheSize} entries`);
+    res.json({
+      success: true,
+      message: `Cleared all cache (${cacheSize} entries). Next requests will fetch fresh data.`
+    });
+  }
 });
 
 // Get earnings transcripts for a company
@@ -127,10 +179,10 @@ app.get('/api/transcripts/:ticker', async (req, res) => {
     const { ticker } = req.params;
     const cacheKey = ticker.toUpperCase();
 
-    // Check cache first
-    if (transcriptCache.has(cacheKey)) {
-      console.log(`✓ Serving ${cacheKey} from cache`);
-      return res.json(transcriptCache.get(cacheKey));
+    // Check cache first (with TTL validation)
+    const cachedResult = getCacheIfValid(cacheKey);
+    if (cachedResult) {
+      return res.json(cachedResult);
     }
 
     // API Ninja endpoint for earnings transcripts
@@ -162,8 +214,8 @@ app.get('/api/transcripts/:ticker', async (req, res) => {
       transcripts: transcripts
     };
 
-    // Cache the result
-    transcriptCache.set(cacheKey, result);
+    // Cache the result with TTL
+    setCacheWithTTL(cacheKey, result);
     console.log(`✓ Successfully fetched ${transcripts.length} transcripts for ${cacheKey}`);
     res.json(result);
 
@@ -188,10 +240,9 @@ app.get('/api/transcripts/:ticker', async (req, res) => {
 async function fetchLast8Quarters(ticker, apiKey) {
   const transcripts = [];
 
-  // Calculate most recent quarter with CONFIRMED earnings data available
-  // We go back 2 quarters because companies report earnings 2-6 weeks after quarter end
-  // Example: Nov 2025 = Q4 2025 in progress, Q3 2025 just ended (data may not be ready)
-  // So we start from Q2 2025 (definitely available)
+  // Calculate most recent quarter to check
+  // START FROM CURRENT QUARTER - transcripts are often available same-day or within hours
+  // We'll request current quarter + last 7, then filter out any that don't exist
   const today = new Date();
   const currentYear = today.getFullYear();
   const currentMonth = today.getMonth(); // 0-11
@@ -200,20 +251,15 @@ async function fetchLast8Quarters(ticker, apiKey) {
   // Q1: Jan-Mar (0-2), Q2: Apr-Jun (3-5), Q3: Jul-Sep (6-8), Q4: Oct-Dec (9-11)
   const currentQuarter = Math.floor(currentMonth / 3) + 1;
 
-  // Go back 2 full quarters to ensure earnings data is available
-  // Companies report 2-6 weeks after quarter end, so most recent quarter may not have data yet
+  // Start from CURRENT quarter (not 2 quarters back)
+  // This ensures we capture same-day transcripts for real-time trading value
   let year = currentYear;
-  let quarter = currentQuarter - 2;
+  let quarter = currentQuarter;
 
-  // Handle year rollover for negative quarters
-  if (quarter <= 0) {
-    quarter += 4;
-    year--;
-  }
+  console.log(`📅 Starting from CURRENT quarter: Q${quarter} ${year} (Today: ${today.toISOString().split('T')[0]})`);
+  console.log(`🔍 Will attempt to fetch Q${quarter} ${year} backwards for 8 quarters...`);
 
-  console.log(`📅 Calculated starting quarter: Q${quarter} ${year} (Current: Q${currentQuarter} ${currentYear})`);
-
-  // Generate list of quarters to fetch (last 8 quarters)
+  // Generate list of quarters to fetch (current quarter + last 7 = 8 total)
   const quartersToFetch = [];
 
   for (let i = 0; i < 8; i++) {
@@ -225,9 +271,14 @@ async function fetchLast8Quarters(ticker, apiKey) {
     }
   }
 
+  // Log all quarters we're requesting
+  console.log(`📋 Quarters to request: ${quartersToFetch.map(q => `Q${q.quarter} ${q.year}`).join(', ')}`);
+
+
   // Fetch each quarter (in parallel for speed)
   const promises = quartersToFetch.map(async ({ year, quarter }) => {
     try {
+      console.log(`📡 Requesting Q${quarter} ${year} for ${ticker}...`);
       const response = await axios.get(`https://api.api-ninjas.com/v1/earningstranscript`, {
         headers: { 'X-Api-Key': apiKey },
         params: {
@@ -240,6 +291,7 @@ async function fetchLast8Quarters(ticker, apiKey) {
 
       // API Ninjas returns the transcript data directly
       if (response.data && response.data.transcript) {
+        console.log(`✅ SUCCESS: Q${quarter} ${year} - Found transcript (${response.data.transcript.length} chars, date: ${response.data.date})`);
         return {
           ticker: ticker,
           quarter: `Q${quarter} ${year}`,
@@ -249,9 +301,14 @@ async function fetchLast8Quarters(ticker, apiKey) {
           transcript: response.data.transcript
         };
       }
+      console.log(`⚠️  EMPTY: Q${quarter} ${year} - API returned data but no transcript field`);
       return null;
     } catch (err) {
-      console.log(`⚠️  Could not fetch Q${quarter} ${year}: ${err.message}`);
+      if (err.response?.status === 404) {
+        console.log(`❌ NOT FOUND: Q${quarter} ${year} - No transcript available yet`);
+      } else {
+        console.log(`❌ ERROR: Q${quarter} ${year} - ${err.message}`);
+      }
       return null;
     }
   });
@@ -259,12 +316,22 @@ async function fetchLast8Quarters(ticker, apiKey) {
   const results = await Promise.all(promises);
 
   // Filter out null results and sort by date (most recent first)
-  return results
+  const validTranscripts = results
     .filter(t => t !== null)
     .sort((a, b) => {
       if (a.year !== b.year) return b.year - a.year; // Most recent year first
       return b.quarterNum - a.quarterNum; // Most recent quarter first
     });
+
+  // Log summary of what we found
+  console.log(`📊 SUMMARY: Found ${validTranscripts.length} transcripts for ${ticker}`);
+  if (validTranscripts.length > 0) {
+    const quartersList = validTranscripts.map(t => t.quarter).join(', ');
+    console.log(`📅 Available quarters: ${quartersList}`);
+    console.log(`🆕 Most recent: ${validTranscripts[0].quarter} (${validTranscripts[0].date})`);
+  }
+
+  return validTranscripts;
 }
 
 // Analyze word frequency in transcripts
