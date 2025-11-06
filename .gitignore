@@ -43,6 +43,7 @@ coverage/
 .cache/
 temp/
 tmp/
+backend/cache/
 
 # Vercel
 .vercel

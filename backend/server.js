@@ -124,15 +124,15 @@ function setCacheWithTTL(key, value) {
     expiry: Date.now() + CACHE_TTL,
     cachedAt: new Date().toISOString()
   });
-  console.log(`💾 Cached ${key} (expires in 4 hours at ${new Date(Date.now() + CACHE_TTL).toLocaleString()})`);
+  console.log(`💾 Cached ${key} (expires in 30 minutes at ${new Date(Date.now() + CACHE_TTL).toLocaleString()})`);
 }
 
 function getCacheIfValid(key) {
   const cached = transcriptCache.get(key);
   if (cached) {
     if (cached.expiry > Date.now()) {
-      const hoursLeft = ((cached.expiry - Date.now()) / (1000 * 60 * 60)).toFixed(1);
-      console.log(`✓ Cache HIT for ${key} (cached ${cached.cachedAt}, expires in ${hoursLeft}h)`);
+      const minutesLeft = Math.round((cached.expiry - Date.now()) / (1000 * 60));
+      console.log(`✓ Cache HIT for ${key} (cached ${cached.cachedAt}, expires in ${minutesLeft}m)`);
       return cached.data;
     } else {
       console.log(`⏰ Cache EXPIRED for ${key} (was cached ${cached.cachedAt})`);
