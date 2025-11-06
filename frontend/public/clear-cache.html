@@ -101,9 +101,11 @@
         <h1>🗑️ EarningsEdge Cache Manager</h1>
 
         <div class="info-box warning">
-            ⚠️ <strong>Purpose:</strong> Clear backend cache to fetch fresh transcript data from API Ninjas.
+            ⚠️ <strong>Important - Serverless Architecture:</strong> Production uses serverless functions with per-instance cache.
             <br><br>
-            <strong>Use this when:</strong> Production shows old data but localhost shows new data (Q3 2025 for UBER, etc.)
+            <strong>✅ Cache automatically expires after 30 minutes.</strong> The next search after 30 minutes will fetch fresh data.
+            <br><br>
+            <strong>⏰ Best option: Wait 30 minutes for automatic cache expiry</strong> or search for the ticker again to potentially hit a different serverless instance with fresh cache.
         </div>
 
         <h2>Clear Specific Ticker</h2>

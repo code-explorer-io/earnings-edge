@@ -1,31 +1,44 @@
 // Using native fetch instead of axios to avoid header encoding issues
 import { applySecurityMiddleware, validateEnvironment } from '../_security.js';
 
-// In-memory cache for transcripts (will persist during function lifetime)
+// In-memory cache for transcripts with TTL (Time To Live)
 const transcriptCache = new Map();
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutes - allows frequent updates for testing while reducing API calls
+
+// Helper functions for cache with TTL
+function setCacheWithTTL(key, value) {
+  transcriptCache.set(key, {
+    data: value,
+    expiry: Date.now() + CACHE_TTL,
+    cachedAt: new Date().toISOString()
+  });
+}
+
+function getCacheIfValid(key) {
+  const cached = transcriptCache.get(key);
+  if (cached && cached.expiry > Date.now()) {
+    return cached.data;
+  }
+  transcriptCache.delete(key);
+  return null;
+}
 
 // Helper function to fetch last 8 quarters from API Ninjas
 async function fetchLast8Quarters(ticker, apiKey) {
   const transcripts = [];
 
-  // Calculate most recent quarter with CONFIRMED earnings data available
-  // We go back 2 quarters because companies report earnings 2-6 weeks after quarter end
+  // Calculate current quarter - START FROM CURRENT to get same-day transcripts
   const today = new Date();
   const currentYear = today.getFullYear();
   const currentMonth = today.getMonth(); // 0-11
   const currentQuarter = Math.floor(currentMonth / 3) + 1; // 1-4
 
-  // Go back 2 quarters to ensure data is available
+  // START FROM CURRENT QUARTER (not 2 quarters back)
+  // This allows same-day transcript detection for critical trading insights
   let year = currentYear;
-  let quarter = currentQuarter - 2;
+  let quarter = currentQuarter;
 
-  // Handle year rollover
-  if (quarter <= 0) {
-    quarter += 4;
-    year--;
-  }
-
-  console.log(`📅 Calculated starting quarter: Q${quarter} ${year} (Current: Q${currentQuarter} ${currentYear})`);
+  console.log(`📅 Starting from CURRENT quarter: Q${quarter} ${year} (Today: ${today.toISOString()})`);
 
   // Generate list of quarters to fetch (last 8 quarters)
   const quartersToFetch = [];
@@ -119,10 +132,11 @@ export default async function handler(req, res) {
 
     console.log(`📋 Processing ticker: ${cacheKey}`);
 
-    // Check cache first
-    if (transcriptCache.has(cacheKey)) {
-      console.log(`✓ Serving ${cacheKey} from cache`);
-      return res.status(200).json(transcriptCache.get(cacheKey));
+    // Check cache first (with TTL validation)
+    const cachedData = getCacheIfValid(cacheKey);
+    if (cachedData) {
+      console.log(`✓ Serving ${cacheKey} from cache (valid for ${Math.round((cachedData.expiry - Date.now()) / 60000)} more minutes)`);
+      return res.status(200).json(cachedData.data);
     }
 
     // API Ninja endpoint for earnings transcripts
@@ -148,9 +162,9 @@ export default async function handler(req, res) {
       transcripts: transcripts
     };
 
-    // Cache the result
-    transcriptCache.set(cacheKey, result);
-    console.log(`✓ Successfully fetched ${transcripts.length} transcripts for ${cacheKey}`);
+    // Cache the result with TTL
+    setCacheWithTTL(cacheKey, result);
+    console.log(`✓ Successfully fetched ${transcripts.length} transcripts for ${cacheKey} (cached for 30 minutes)`);
 
     return res.status(200).json(result);
 
