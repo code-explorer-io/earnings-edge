@@ -3,7 +3,7 @@
  *
  * Features:
  * - 10 welcome credits for new users
- * - 5 daily credits after welcome credits used
+ * - 25 daily credits after welcome credits used (increased for testing)
  * - Daily refresh at midnight UTC
  * - Purchased credits (future) never expire
  */
@@ -18,8 +18,8 @@ const STORAGE_KEYS = {
 
 const CREDIT_CONFIG = {
   WELCOME_CREDITS: 10,
-  DAILY_CREDITS: 5,  // 5 free credits added daily after welcome credits used
-  MAX_FREE_CREDITS: 10,
+  DAILY_CREDITS: 25,  // 25 free credits added daily after welcome credits used (increased for testing)
+  MAX_FREE_CREDITS: 25,  // Maximum free credits you can have at once
   COST_PER_ANALYSIS: 1
 };
 
