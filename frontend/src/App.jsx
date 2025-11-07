@@ -6,20 +6,10 @@ import TrendChart from './components/TrendChart';
 import QuickStats from './components/QuickStats';
 import Calculator from './components/Calculator';
 import About from './components/About';
-import CreditCounter from './components/CreditCounter';
-import CreditWarningModal from './components/CreditWarningModal';
-import CreditInfoPage from './components/CreditInfoPage';
 import Toast from './components/Toast';
 import ProgressBar from './components/ProgressBar';
 import EmptyState from './components/EmptyState';
-import {
-  initializeCreditSystem,
-  deductCredits,
-  getCurrentCredits,
-  getCreditStatus,
-  checkAndRefreshDailyCredits
-} from './utils/creditManager';
-import { initializeAdminHelpers } from './utils/adminHelpers';
+import PolyMarketButton from './components/PolyMarketButton';
 import {
   celebrateAnalysisComplete,
   celebrateFirstAnalysis,
@@ -32,7 +22,7 @@ import {
 const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.MODE === 'production' ? '/api' : 'http://localhost:3001/api');
 
 function App() {
-  const [activeTab, setActiveTab] = useState('analyze'); // 'analyze', 'calculator', 'about', 'credits-info'
+  const [activeTab, setActiveTab] = useState('analyze'); // 'analyze', 'calculator', 'about'
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressStatus, setProgressStatus] = useState('');
@@ -43,11 +33,6 @@ function App() {
   const [polymarketData, setPolymarketData] = useState(null); // Store PolyMarket data
   const [showHighConsistency, setShowHighConsistency] = useState(false); // Filter for 75%+ consistency
 
-  // Credit system state
-  const [credits, setCredits] = useState(0);
-  const [showModal, setShowModal] = useState(false);
-  const [modalType, setModalType] = useState(null); // 'welcome', 'low-credits', 'no-credits'
-
   // Toast notification state
   const [toast, setToast] = useState({ visible: false, message: '', type: 'info' });
 
@@ -57,55 +42,52 @@ function App() {
   // Ref for InputForm reset function
   const inputFormResetRef = useRef(null);
 
-  // Initialize credit system on mount
+  // Log PolyMarket affiliate status on mount and clean up old credit system data
   useEffect(() => {
-    const creditInfo = initializeCreditSystem();
-    setCredits(creditInfo.credits);
-
-    // Show welcome modal for ALL users on first visit
-    // Check if they've seen the credit system intro
-    const hasSeenIntro = localStorage.getItem('earningsEdgeSeenIntro');
-    if (!hasSeenIntro) {
-      setModalType('welcome');
-      setShowModal(true);
-      localStorage.setItem('earningsEdgeSeenIntro', 'true');
+    const refCode = import.meta.env.VITE_POLYMARKET_REF;
+    if (refCode) {
+      console.log('✅ PolyMarket affiliate active');
+    } else {
+      console.log('⏳ Add VITE_POLYMARKET_REF to enable affiliate links');
     }
 
-    // Check for daily refresh
-    checkAndRefreshDailyCredits();
+    // Clean up old credit system localStorage data (migration)
+    const oldCreditKeys = [
+      'earningsEdgeCredits',
+      'earningsEdgeSessionId',
+      'earningsEdgeWelcomeUsed',
+      'earningsEdgeLastRefresh',
+      'earningsEdgePurchasedCredits',
+      'earningsEdgeSeenIntro'
+    ];
 
-    // Initialize admin helpers (dev mode only)
-    initializeAdminHelpers();
+    let cleanedCount = 0;
+    oldCreditKeys.forEach(key => {
+      if (localStorage.getItem(key) !== null) {
+        localStorage.removeItem(key);
+        cleanedCount++;
+      }
+    });
+
+    if (cleanedCount > 0) {
+      console.log(`🧹 Cleaned up ${cleanedCount} old credit system keys from localStorage`);
+    }
   }, []);
 
   // Auto-scroll to results after analysis and confetti
   useEffect(() => {
-    console.log('📊 Auto-scroll effect triggered');
-    console.log('analysisResults:', analysisResults);
-    console.log('resultsRef.current:', resultsRef.current);
-
     if (analysisResults && analysisResults.wordFrequency && analysisResults.wordFrequency.length > 0) {
-      console.log('✅ Conditions met, starting 3s scroll timer...');
       // Wait 3 seconds for confetti celebrations to finish
       const scrollTimer = setTimeout(() => {
-        console.log('⏰ 3 seconds passed, attempting scroll...');
         if (resultsRef.current) {
-          console.log('🎯 Scrolling to results!');
           resultsRef.current.scrollIntoView({
             behavior: 'smooth',
             block: 'start'
           });
-        } else {
-          console.log('❌ resultsRef.current is null');
         }
       }, 3000);
 
-      return () => {
-        console.log('🧹 Cleaning up scroll timer');
-        clearTimeout(scrollTimer);
-      };
-    } else {
-      console.log('❌ Conditions not met for auto-scroll');
+      return () => clearTimeout(scrollTimer);
     }
   }, [analysisResults]);
 
@@ -115,14 +97,6 @@ function App() {
   };
 
   const handleAnalyze = async (ticker, words, polymarketData = null) => {
-    // Check if user has enough credits
-    const currentCredits = getCurrentCredits();
-    if (currentCredits < 1) {
-      setModalType('no-credits');
-      setShowModal(true);
-      return;
-    }
-
     setLoading(true);
     setProgress(0);
     setProgressStatus('Fetching transcripts...');
@@ -190,9 +164,11 @@ function App() {
       if (isFirstAnalysis()) {
         celebrateFirstAnalysis();
         markFirstAnalysisComplete();
+        showToast('🎉 Welcome! Your first analysis is complete!', 'success', 4000);
       } else {
         // Regular analysis complete celebration
         celebrateAnalysisComplete();
+        showToast('✅ Analysis complete!', 'success', 2000);
       }
 
       // Check for perfect consistency (100%) keywords
@@ -206,54 +182,14 @@ function App() {
         }, 1000);
       }
 
-      // Auto-scroll to results after confetti (backup mechanism)
-      setTimeout(() => {
-        console.log('🔄 Backup scroll mechanism triggered');
-        const resultsElement = document.getElementById('results-section');
-        if (resultsElement) {
-          console.log('📍 Found results element, scrolling...');
-          resultsElement.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-          });
-        } else {
-          console.log('❌ Results element not found');
-        }
-      }, 3000);
-
-      // Deduct credit after successful analysis
-      const deductionResult = deductCredits(1);
-      if (deductionResult.success) {
-        setCredits(deductionResult.remainingCredits);
-
-        // Show toast notification
-        showToast(
-          `Credit used - ${deductionResult.remainingCredits} remaining`,
-          'credit',
-          3000
-        );
-
-        // Show low credit warning if they have 2 or fewer credits left
-        if (deductionResult.remainingCredits <= 2 && deductionResult.remainingCredits > 0) {
-          setTimeout(() => {
-            setModalType('low-credits');
-            setShowModal(true);
-          }, 2000); // Delay so they see results and toast first
-        }
-      }
-
     } catch (err) {
       const errorMessage = err.message || 'An unexpected error occurred';
       setError(errorMessage);
       console.error('Analysis error:', err);
+      showToast(`Error: ${errorMessage}`, 'error', 5000);
     } finally {
       setLoading(false);
     }
-  };
-
-  // Handle credit updates from CreditCounter
-  const handleCreditUpdate = (newCredits, status) => {
-    setCredits(newCredits);
   };
 
   const handleWordClick = (word) => {
@@ -294,6 +230,8 @@ function App() {
     a.download = `${analysisResults.ticker}_earnings_analysis.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
+
+    showToast('📥 CSV downloaded successfully!', 'success');
   };
 
   const handleStartNewAnalysis = () => {
@@ -344,23 +282,23 @@ function App() {
         </div>
         <div className="header-center">
           <h1>⚡ EarningsEdge</h1>
-          <p className="subtitle">Analyze word frequency trends in earnings calls for PolyMarket insights</p>
+          <p className="subtitle">Unlimited Free Analysis • Earnings Call Insights for PolyMarket</p>
         </div>
         <div className="header-right">
-          <CreditCounter
-            onCreditUpdate={handleCreditUpdate}
-            darkMode={darkMode}
-          />
+          {/* Free forever badge */}
+          <div style={{
+            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+            color: 'white',
+            padding: '0.5rem 1rem',
+            borderRadius: '20px',
+            fontSize: '0.9rem',
+            fontWeight: '600',
+            boxShadow: '0 2px 4px rgba(16, 185, 129, 0.3)'
+          }}>
+            💎 100% FREE
+          </div>
         </div>
       </header>
-
-      {/* Credit Warning Modal */}
-      <CreditWarningModal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        warningType={modalType}
-        darkMode={darkMode}
-      />
 
       {/* Tab Navigation */}
       <nav className="tabs-container" role="navigation" aria-label="Main navigation">
@@ -390,15 +328,6 @@ function App() {
         >
           <span className="tab-icon" aria-hidden="true">📖</span>
           <span className="tab-label">About</span>
-        </button>
-        <button
-          className={`tab ${activeTab === 'credits-info' ? 'active' : ''}`}
-          onClick={() => setActiveTab('credits-info')}
-          aria-label="Learn how credits work"
-          aria-current={activeTab === 'credits-info' ? 'page' : undefined}
-        >
-          <span className="tab-icon" aria-hidden="true">⚡</span>
-          <span className="tab-label">How Credits Work</span>
         </button>
       </nav>
 
@@ -434,6 +363,13 @@ function App() {
                 Results for {analysisResults.ticker}
               </h2>
               <div className="results-header-actions">
+                <PolyMarketButton
+                  ticker={analysisResults.ticker}
+                  variant="search"
+                  buttonText={`🔍 Find ${analysisResults.ticker} Markets`}
+                  size="medium"
+                  className="results-polymarket-btn"
+                />
                 <button className="new-analysis-btn" onClick={handleStartNewAnalysis}>
                   ↻ Start New Analysis
                 </button>
@@ -570,21 +506,9 @@ function App() {
         {/* Calculator Tab Content */}
         {activeTab === 'calculator' && <Calculator />}
 
-        {/* Credits Info Tab Content */}
-        {activeTab === 'credits-info' && <CreditInfoPage darkMode={darkMode} />}
-
         {/* About Tab Content */}
         {activeTab === 'about' && <About onTabChange={setActiveTab} />}
       </main>
-
-      {/* Toast Notification */}
-      <Toast
-        message={toast.message}
-        type={toast.type}
-        isVisible={toast.visible}
-        onClose={() => setToast({ ...toast, visible: false })}
-        duration={toast.duration}
-      />
 
       <footer className="app-footer">
         <div style={{

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import './ResultsTable.css';
 import KeywordContextModal from './KeywordContextModal';
+import PolyMarketButton from './PolyMarketButton';
 
 function ResultsTable({ data, focusedWords, showHighConsistency, ticker }) {
   const [modalOpen, setModalOpen] = useState(false);
@@ -98,6 +99,14 @@ function ResultsTable({ data, focusedWords, showHighConsistency, ticker }) {
                     >
                       💬
                     </button>
+                    <PolyMarketButton
+                      ticker={ticker}
+                      keyword={wordData.word}
+                      variant="search"
+                      buttonText="🎯"
+                      size="small"
+                      className="inline-polymarket-btn"
+                    />
                   </div>
                 </td>
                 <td className="traffic-light-cell" title={`${wordData.riskLevel}: ${wordData.consistencyPercent}%`}>

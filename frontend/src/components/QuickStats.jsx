@@ -1,5 +1,6 @@
 import './QuickStats.css';
 import PolyMarketComparison from './PolyMarketComparison';
+import PolyMarketButton from './PolyMarketButton';
 
 function QuickStats({ data, focusedWords, showHighConsistency, onWordClick, polymarketData, onCalculate }) {
   if (!data || data.length === 0) return null;
@@ -198,6 +199,33 @@ function QuickStats({ data, focusedWords, showHighConsistency, onWordClick, poly
           </div>
         ))}
       </div>
+
+      {/* PolyMarket CTA Section */}
+      {displayData.some(wordData => parseFloat(wordData.consistencyPercent) >= 75) && (
+        <div style={{
+          marginTop: '2rem',
+          padding: '1.5rem',
+          background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%)',
+          borderRadius: '12px',
+          border: '1px solid rgba(79, 70, 229, 0.2)',
+          textAlign: 'center'
+        }}>
+          <p style={{
+            fontSize: '1.1rem',
+            fontWeight: '600',
+            color: '#4F46E5',
+            marginBottom: '1rem'
+          }}>
+            🎯 These patterns could indicate trading opportunities
+          </p>
+          <PolyMarketButton
+            variant="generic"
+            buttonText="View Markets on PolyMarket"
+            size="large"
+            className="quickstats-polymarket-btn"
+          />
+        </div>
+      )}
     </div>
   );
 }

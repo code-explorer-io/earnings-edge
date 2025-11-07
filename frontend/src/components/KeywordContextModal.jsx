@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { celebrateAiSummary, celebrateShareCopied } from '../utils/confetti';
+import PolyMarketButton from './PolyMarketButton';
 
 // Use environment variable for API URL, fallback to production API, or localhost for dev
 const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.MODE === 'production' ? '/api' : 'http://localhost:3001/api');
@@ -272,6 +273,23 @@ function KeywordContextModal({ isOpen, onClose, ticker, keyword }) {
                       {aiSummary.cached && (
                         <p className="text-xs text-gray-500 mt-2 italic">⚡ Cached result</p>
                       )}
+                    </div>
+                  )}
+
+                  {/* PolyMarket CTA */}
+                  {aiSummary && !aiLoading && (
+                    <div className="text-center mb-4">
+                      <p className="text-gray-700 text-sm mb-3 font-medium">
+                        💰 Want to trade on this insight?
+                      </p>
+                      <PolyMarketButton
+                        ticker={ticker}
+                        keyword={keyword}
+                        variant="search"
+                        buttonText={`Search "${keyword}" on PolyMarket`}
+                        size="medium"
+                        className="modal-polymarket-btn"
+                      />
                     </div>
                   )}
 

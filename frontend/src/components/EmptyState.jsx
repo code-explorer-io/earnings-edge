@@ -1,4 +1,5 @@
 import './EmptyState.css';
+import PolyMarketButton from './PolyMarketButton';
 
 function EmptyState({ darkMode }) {
   return (
@@ -9,6 +10,18 @@ function EmptyState({ darkMode }) {
         <p className="empty-state-description">
           Get started by entering a company ticker and keywords you want to track across quarterly earnings calls.
         </p>
+
+        <div className="empty-state-workflow">
+          <p className="workflow-text">
+            📊 Analyze earnings → 🔍 Find patterns → 💰 Trade on PolyMarket
+          </p>
+          <PolyMarketButton
+            variant="generic"
+            buttonText="Learn About PolyMarket"
+            size="medium"
+            className="empty-state-polymarket-btn"
+          />
+        </div>
 
         <div className="empty-state-example">
           <div className="example-badge">💡 Example Analysis</div>

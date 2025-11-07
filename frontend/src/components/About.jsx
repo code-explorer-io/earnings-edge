@@ -56,6 +56,28 @@ function About({ onTabChange }) {
           </div>
         </div>
 
+        <div className="about-section transparency-section">
+          <div className="section-icon">💎</div>
+          <h3>Why is EarningsEdge Free?</h3>
+          <div className="transparency-box">
+            <p>
+              <strong>EarningsEdge is completely free with unlimited analyses.</strong> No credits, no paywalls, no subscriptions.
+            </p>
+            <p>
+              We earn small commissions when you trade on PolyMarket using our analysis. This affiliate model
+              keeps the tool free while helping us cover API costs and server expenses.
+            </p>
+            <p>
+              Your support through these links means we can keep building features and helping more traders
+              make data-driven decisions. We're transparent about this relationship because we believe in
+              building trust with our users.
+            </p>
+            <p className="thank-you">
+              Thank you for using EarningsEdge! 🙏
+            </p>
+          </div>
+        </div>
+
         <div className="about-section">
           <div className="section-icon">🔍</div>
           <h3>Key Features</h3>
