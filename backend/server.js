@@ -87,7 +87,8 @@ const corsOptions = {
 // Middleware
 app.use(helmet()); // Security headers
 app.use(cors(corsOptions));
-app.use(express.json({ limit: '10mb' })); // Increase limit for large transcripts
+app.use(express.json({ limit: '50mb' })); // Increase limit for large transcripts
+app.use(express.urlencoded({ limit: '50mb', extended: true })); // Increase limit for URL-encoded data
 
 // Rate limiting configuration
 // Limit: 100 requests per 15 minutes per IP address

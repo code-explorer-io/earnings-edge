@@ -45,7 +45,8 @@
       "Bash(timeout 15 node:*)",
       "Bash(find:*)",
       "Bash(node test_uber_q3.js:*)",
-      "Bash(node verify_abnb_holiday.js:*)"
+      "Bash(node verify_abnb_holiday.js:*)",
+      "Bash(timeout 10 curl:*)"
     ],
     "deny": [],
     "ask": []
