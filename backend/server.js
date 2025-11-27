@@ -197,19 +197,21 @@ app.get('/api/transcripts/:ticker', async (req, res) => {
       });
     }
 
-    console.log(`\n${'='.repeat(60)}`);
-    console.log(`📡 FETCHING TRANSCRIPTS FOR: ${cacheKey}`);
-    console.log(`${'='.repeat(60)}`);
-
-    // Fetch last 8 quarters from API Ninjas
-    const transcripts = await fetchLast8Quarters(cacheKey, apiKey);
-
-    console.log(`${'='.repeat(60)}`);
-    console.log(`✓ FETCH COMPLETE FOR: ${cacheKey}`);
-    console.log(`${'='.repeat(60)}\n`);
+    // Fetch latest transcript from API Ninjas (FREE tier limitation)
+    const { transcripts, error } = await fetchLatestTranscript(cacheKey, apiKey);
 
     if (transcripts.length === 0) {
-      console.error(`❌ No transcripts found for ${cacheKey}`);
+      console.error(`❌ No transcripts found for ${cacheKey}: ${error}`);
+
+      // Check if it's a premium-only ticker
+      if (error && error.includes('premium')) {
+        return res.status(403).json({
+          error: 'Premium ticker',
+          message: `${cacheKey} transcripts require a premium API Ninjas subscription. Try popular tickers like AAPL, MSFT, GOOGL, AMZN, SBUX, or COST.`,
+          isPremium: true
+        });
+      }
+
       return res.status(404).json({
         error: 'No transcripts found',
         message: `No earnings call transcripts available for ticker ${cacheKey}. Try a major company like SBUX, AAPL, MSFT, or GOOGL.`
@@ -243,203 +245,67 @@ app.get('/api/transcripts/:ticker', async (req, res) => {
   }
 });
 
-// Helper function to fetch last 8 quarters from API Ninjas
-async function fetchLast8Quarters(ticker, apiKey) {
-  const transcripts = [];
+// Helper function to fetch the latest transcript from API Ninjas (FREE tier)
+// FREE tier only allows fetching the most recent transcript (no year/quarter params)
+async function fetchLatestTranscript(ticker, apiKey) {
+  try {
+    // FREE tier: no year/quarter params - returns only the latest transcript
+    const apiUrl = `https://api.api-ninjas.com/v1/earningstranscript`;
 
-  // Calculate most recent quarter to check
-  // START FROM CURRENT QUARTER - transcripts are often available same-day or within hours
-  // We'll request current quarter + last 7, then filter out any that don't exist
-  const today = new Date();
-  const currentYear = today.getFullYear();
-  const currentMonth = today.getMonth(); // 0-11
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`📡 Fetching latest transcript for ${ticker} (FREE tier - single quarter only)`);
+    console.log(`${'='.repeat(60)}`);
 
-  console.log(`\n🕐 CURRENT DATE CALCULATION:`);
-  console.log(`   Today: ${today.toISOString()}`);
-  console.log(`   Year: ${currentYear}`);
-  console.log(`   Month: ${currentMonth} (0-indexed, so ${currentMonth + 1} in human terms)`);
-  console.log(`   Day: ${today.getDate()}`);
+    const requestStartTime = Date.now();
+    const response = await axios.get(apiUrl, {
+      headers: { 'X-Api-Key': apiKey },
+      params: { ticker },
+      timeout: 10000,
+      validateStatus: () => true // Accept all status codes
+    });
+    const requestDuration = Date.now() - requestStartTime;
 
-  // Determine current quarter based on month
-  // Q1: Jan-Mar (0-2), Q2: Apr-Jun (3-5), Q3: Jul-Sep (6-8), Q4: Oct-Dec (9-11)
-  const currentQuarter = Math.floor(currentMonth / 3) + 1;
+    console.log(`📦 Response received (${requestDuration}ms) - Status: ${response.status}`);
 
-  console.log(`\n📊 QUARTER CALCULATION:`);
-  console.log(`   Formula: Math.floor(${currentMonth} / 3) + 1 = ${currentQuarter}`);
-  console.log(`   Current Quarter: Q${currentQuarter} ${currentYear}`);
-
-  // Start from CURRENT quarter (not 2 quarters back)
-  // This ensures we capture same-day transcripts for real-time trading value
-  let year = currentYear;
-  let quarter = currentQuarter;
-
-  console.log(`\n📅 STARTING POINT:`);
-  console.log(`   Starting from: Q${quarter} ${year}`);
-  console.log(`   Strategy: Fetch current quarter + 7 previous = 8 total quarters`);
-
-  // Generate list of quarters to fetch (current quarter + last 7 = 8 total)
-  const quartersToFetch = [];
-
-  console.log(`\n🔄 GENERATING QUARTER LIST:`);
-  for (let i = 0; i < 8; i++) {
-    quartersToFetch.push({ year, quarter });
-    console.log(`   [${i + 1}/8] Q${quarter} ${year}`);
-    quarter--;
-    if (quarter === 0) {
-      quarter = 4;
-      year--;
-      console.log(`   → Year rollover: now at ${year}`);
+    // Check for premium-only error
+    if (response.data && response.data.error) {
+      console.log(`⚠️  API error: ${response.data.error}`);
+      return { transcripts: [], error: response.data.error };
     }
-  }
 
-  // Log all quarters we're requesting
-  console.log(`\n📋 FINAL QUARTERS LIST (will request in parallel):`);
-  console.log(`   ${quartersToFetch.map(q => `Q${q.quarter} ${q.year}`).join(', ')}`);
-  console.log(``);
+    // Check HTTP status
+    if (response.status !== 200) {
+      console.log(`❌ Non-200 status code: ${response.status}`);
+      return { transcripts: [], error: `API returned status ${response.status}` };
+    }
 
+    // API Ninjas returns the transcript data directly
+    if (response.data && response.data.transcript) {
+      const year = parseInt(response.data.year) || new Date().getFullYear();
+      const quarter = parseInt(response.data.quarter) || Math.floor(new Date().getMonth() / 3) + 1;
 
-  // Fetch each quarter (in parallel for speed)
-  console.log(`\n🚀 STARTING PARALLEL API REQUESTS...\n`);
-  console.log(`⚠️  NOTE: Requests execute in parallel, so logs may be interleaved\n`);
+      console.log(`✅ Found transcript: Q${quarter} ${year} (${response.data.transcript.length} chars)`);
 
-  const promises = quartersToFetch.map(async ({ year, quarter }, index) => {
-    const requestId = `[${index + 1}/8][Q${quarter} ${year}]`;
-    try {
-      const apiUrl = `https://api.api-ninjas.com/v1/earningstranscript`;
-      const params = { ticker, year, quarter };
-      const fullUrl = `${apiUrl}?ticker=${ticker}&year=${year}&quarter=${quarter}`;
-
-      console.log(`\n${'─'.repeat(70)}`);
-      console.log(`${requestId} 📡 INITIATING REQUEST`);
-      console.log(`${requestId} Ticker: ${ticker}`);
-      console.log(`${requestId} Year: ${year}`);
-      console.log(`${requestId} Quarter: ${quarter}`);
-      console.log(`${requestId} Full URL: ${fullUrl}`);
-      console.log(`${requestId} Timestamp: ${new Date().toISOString()}`);
-
-      const requestStartTime = Date.now();
-      const response = await axios.get(apiUrl, {
-        headers: { 'X-Api-Key': apiKey },
-        params,
-        timeout: 10000,
-        validateStatus: () => true // Accept all status codes
-      });
-      const requestDuration = Date.now() - requestStartTime;
-
-      console.log(`${'─'.repeat(70)}`);
-      console.log(`${requestId} 📦 RESPONSE RECEIVED (${requestDuration}ms)`);
-      console.log(`${requestId} HTTP Status: ${response.status} ${response.statusText}`);
-      console.log(`${requestId} Content-Type: ${response.headers['content-type']}`);
-
-      if (response.data) {
-        const dataKeys = Object.keys(response.data);
-        console.log(`${requestId} Response has keys: ${dataKeys.join(', ')}`);
-        console.log(`${requestId} Has 'transcript': ${!!response.data.transcript}`);
-        console.log(`${requestId} Has 'date': ${!!response.data.date}`);
-        console.log(`${requestId} Has 'error': ${!!response.data.error}`);
-
-        if (response.data.transcript) {
-          const transcriptLength = response.data.transcript.length;
-          const preview = response.data.transcript.substring(0, 80).replace(/\n/g, ' ');
-          console.log(`${requestId} Transcript length: ${transcriptLength} chars`);
-          console.log(`${requestId} Preview: "${preview}..."`);
-          console.log(`${requestId} Date: ${response.data.date || 'NOT PROVIDED BY API'}`);
-        } else {
-          console.log(`${requestId} ⚠️  'transcript' field is missing or empty!`);
-          console.log(`${requestId} Full response: ${JSON.stringify(response.data).substring(0, 200)}`);
-        }
-      } else {
-        console.log(`${requestId} ⚠️  No data in response!`);
-      }
-
-      // Check HTTP status
-      if (response.status !== 200) {
-        console.log(`${requestId} ❌ Non-200 status code: ${response.status}`);
-        console.log(`${requestId} → Returning null`);
-        return null;
-      }
-
-      // Check for transcript data
-      if (response.data && response.data.transcript) {
-        console.log(`${requestId} ✅ SUCCESS - Valid transcript found!`);
-
-        const result = {
+      return {
+        transcripts: [{
           ticker: ticker,
           quarter: `Q${quarter} ${year}`,
           year: year,
           quarterNum: quarter,
           date: response.data.date || `${quarter * 3}/15/${year}`,
           transcript: response.data.transcript
-        };
-
-        console.log(`${requestId} → Returning transcript object: Q${quarter} ${year}, ${result.transcript.length} chars`);
-        return result;
-      }
-
-      console.log(`${requestId} ⚠️  EMPTY - No valid transcript in response`);
-      console.log(`${requestId} → Returning null`);
-      return null;
-
-    } catch (err) {
-      console.log(`${'─'.repeat(70)}`);
-      console.log(`${requestId} ❌ EXCEPTION CAUGHT`);
-      console.log(`${requestId} Error type: ${err.constructor.name}`);
-      console.log(`${requestId} Error message: ${err.message}`);
-      console.log(`${requestId} Error code: ${err.code || 'none'}`);
-
-      if (err.response) {
-        console.log(`${requestId} Response status: ${err.response.status}`);
-        console.log(`${requestId} Response data: ${JSON.stringify(err.response.data)}`);
-      } else if (err.request) {
-        console.log(`${requestId} No response received (network error?)`);
-      } else {
-        console.log(`${requestId} Error setting up request: ${err.message}`);
-      }
-
-      if (err.response?.status === 404) {
-        console.log(`${requestId} → 404: Transcript not available on API Ninjas yet`);
-      } else if (err.code === 'ECONNABORTED') {
-        console.log(`${requestId} → TIMEOUT: Request exceeded 10 seconds`);
-      }
-
-      console.log(`${requestId} → Returning null`);
-      return null;
+        }],
+        error: null
+      };
     }
-  });
 
-  console.log(`\n⏳ Waiting for all ${promises.length} parallel requests to complete...\n`);
-  const results = await Promise.all(promises);
+    console.log(`⚠️  No transcript data in response`);
+    return { transcripts: [], error: 'No transcript data returned' };
 
-  console.log(`\n📊 PROCESSING RESULTS:`);
-  console.log(`   Total requests: ${promises.length}`);
-  console.log(`   Successful: ${results.filter(r => r !== null).length}`);
-  console.log(`   Failed/Not found: ${results.filter(r => r === null).length}`);
-
-  // Filter out null results and sort by date (most recent first)
-  console.log(`\n🔄 Filtering and sorting transcripts...`);
-  const validTranscripts = results
-    .filter(t => t !== null)
-    .sort((a, b) => {
-      if (a.year !== b.year) return b.year - a.year; // Most recent year first
-      return b.quarterNum - a.quarterNum; // Most recent quarter first
-    });
-
-  // Log summary of what we found
-  console.log(`\n📊 FINAL SUMMARY FOR ${ticker}:`);
-  console.log(`   ✅ Found: ${validTranscripts.length} valid transcripts`);
-
-  if (validTranscripts.length > 0) {
-    console.log(`\n📅 AVAILABLE QUARTERS (sorted newest to oldest):`);
-    validTranscripts.forEach((t, idx) => {
-      const isNewest = idx === 0;
-      console.log(`   ${isNewest ? '🆕' : '  '} [${idx + 1}] ${t.quarter} (date: ${t.date}) ${t.transcript.length} chars`);
-    });
-    console.log(`\n🎯 MOST RECENT QUARTER: ${validTranscripts[0].quarter} (${validTranscripts[0].date})`);
-  } else {
-    console.log(`   ❌ No transcripts found at all!`);
+  } catch (err) {
+    console.error(`❌ Exception fetching transcript for ${ticker}:`, err.message);
+    return { transcripts: [], error: err.message };
   }
-
-  return validTranscripts;
 }
 
 // Analyze word frequency in transcripts
@@ -682,10 +548,18 @@ app.get('/api/context/:ticker/:keyword', async (req, res) => {
         });
       }
 
-      console.log(`📡 Fetching transcripts for ${cacheKey} from API Ninjas...`);
-      const transcripts = await fetchLast8Quarters(cacheKey, apiKey);
+      console.log(`📡 Fetching transcripts for ${cacheKey} from API Ninjas (FREE tier)...`);
+      const { transcripts, error } = await fetchLatestTranscript(cacheKey, apiKey);
 
       if (transcripts.length === 0) {
+        // Check if it's a premium-only ticker
+        if (error && error.includes('premium')) {
+          return res.status(403).json({
+            error: 'Premium ticker',
+            message: `${cacheKey} transcripts require a premium API Ninjas subscription.`,
+            isPremium: true
+          });
+        }
         return res.status(404).json({
           error: 'No transcripts found',
           message: `No earnings call transcripts available for ticker ${cacheKey}.`

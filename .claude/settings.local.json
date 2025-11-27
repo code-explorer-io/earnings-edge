@@ -48,7 +48,8 @@
       "Bash(node verify_abnb_holiday.js:*)",
       "Bash(timeout 10 curl:*)",
       "Bash(timeout 15 curl:*)",
-      "Bash(claude config set:*)"
+      "Bash(claude config set:*)",
+      "Bash(do echo -n \"$ticker: \")"
     ],
     "deny": [],
     "ask": []

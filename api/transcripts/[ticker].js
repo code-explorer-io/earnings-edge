@@ -23,84 +23,61 @@ function getCacheIfValid(key) {
   return null;
 }
 
-// Helper function to fetch last 8 quarters from API Ninjas
-async function fetchLast8Quarters(ticker, apiKey) {
-  const transcripts = [];
+// Helper function to fetch the latest transcript from API Ninjas (FREE tier)
+// FREE tier only allows fetching the most recent transcript (no year/quarter params)
+async function fetchLatestTranscript(ticker, apiKey) {
+  try {
+    // FREE tier: no year/quarter params - returns only the latest transcript
+    const url = `https://api.api-ninjas.com/v1/earningstranscript?ticker=${ticker}`;
 
-  // Calculate current quarter - START FROM CURRENT to get same-day transcripts
-  const today = new Date();
-  const currentYear = today.getFullYear();
-  const currentMonth = today.getMonth(); // 0-11
-  const currentQuarter = Math.floor(currentMonth / 3) + 1; // 1-4
+    console.log(`📡 Fetching latest transcript for ${ticker} (FREE tier - single quarter only)`);
 
-  // START FROM CURRENT QUARTER (not 2 quarters back)
-  // This allows same-day transcript detection for critical trading insights
-  let year = currentYear;
-  let quarter = currentQuarter;
-
-  console.log(`📅 Starting from CURRENT quarter: Q${quarter} ${year} (Today: ${today.toISOString()})`);
-
-  // Generate list of quarters to fetch (last 8 quarters)
-  const quartersToFetch = [];
-
-  for (let i = 0; i < 8; i++) {
-    quartersToFetch.push({ year, quarter });
-    quarter--;
-    if (quarter === 0) {
-      quarter = 4;
-      year--;
-    }
-  }
-
-  // Fetch each quarter (in parallel for speed)
-  const promises = quartersToFetch.map(async ({ year, quarter }) => {
-    try {
-      const url = `https://api.api-ninjas.com/v1/earningstranscript?ticker=${ticker}&year=${year}&quarter=${quarter}`;
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'X-Api-Key': apiKey
-        }
-      });
-
-      if (!response.ok) {
-        console.error(`⚠️  API returned ${response.status} for Q${quarter} ${year}`);
-        return null;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'X-Api-Key': apiKey
       }
+    });
 
-      const data = await response.json();
+    if (!response.ok) {
+      console.error(`⚠️  API returned ${response.status} for ${ticker}`);
+      return { transcripts: [], error: `API returned status ${response.status}` };
+    }
 
-      // API Ninjas returns the transcript data directly
-      if (data && data.transcript) {
-        return {
+    const data = await response.json();
+
+    // Check for premium-only error
+    if (data.error) {
+      console.error(`⚠️  API error for ${ticker}: ${data.error}`);
+      return { transcripts: [], error: data.error };
+    }
+
+    // API Ninjas returns the transcript data directly
+    if (data && data.transcript) {
+      const year = parseInt(data.year) || new Date().getFullYear();
+      const quarter = parseInt(data.quarter) || Math.floor(new Date().getMonth() / 3) + 1;
+
+      return {
+        transcripts: [{
           ticker: ticker,
           quarter: `Q${quarter} ${year}`,
           year: year,
           quarterNum: quarter,
           date: data.date || `${quarter * 3}/15/${year}`,
           transcript: data.transcript
-        };
-      }
-      return null;
-    } catch (err) {
-      console.error(`⚠️  Could not fetch Q${quarter} ${year}:`, {
-        message: err.message,
-        stack: err.stack
-      });
-      return null;
+        }],
+        error: null
+      };
     }
-  });
 
-  const results = await Promise.all(promises);
-
-  // Filter out null results and sort by date (most recent first)
-  return results
-    .filter(t => t !== null)
-    .sort((a, b) => {
-      if (a.year !== b.year) return b.year - a.year;
-      return b.quarterNum - a.quarterNum;
+    return { transcripts: [], error: 'No transcript data returned' };
+  } catch (err) {
+    console.error(`⚠️  Could not fetch transcript for ${ticker}:`, {
+      message: err.message,
+      stack: err.stack
     });
+    return { transcripts: [], error: err.message };
+  }
 }
 
 export default async function handler(req, res) {
@@ -142,15 +119,25 @@ export default async function handler(req, res) {
     // API Ninja endpoint for earnings transcripts
     const apiKey = process.env.API_NINJA_KEY;
 
-    console.log(`📡 Fetching transcripts for ${cacheKey} from API Ninjas...`);
+    console.log(`📡 Fetching transcripts for ${cacheKey} from API Ninjas (FREE tier)...`);
 
-    // Fetch last 8 quarters from API Ninjas
-    const transcripts = await fetchLast8Quarters(cacheKey, apiKey);
+    // Fetch latest transcript from API Ninjas (FREE tier limitation)
+    const { transcripts, error } = await fetchLatestTranscript(cacheKey, apiKey);
 
     console.log(`📊 Fetched ${transcripts.length} transcripts`);
 
     if (transcripts.length === 0) {
-      console.error(`❌ No transcripts found for ${cacheKey}`);
+      console.error(`❌ No transcripts found for ${cacheKey}: ${error}`);
+
+      // Check if it's a premium-only ticker
+      if (error && error.includes('premium')) {
+        return res.status(403).json({
+          error: 'Premium ticker',
+          message: `${cacheKey} transcripts require a premium API Ninjas subscription. Try popular tickers like AAPL, MSFT, GOOGL, AMZN, SBUX, or COST.`,
+          isPremium: true
+        });
+      }
+
       return res.status(404).json({
         error: 'No transcripts found',
         message: `No earnings call transcripts available for ticker ${cacheKey}. Try a major company like SBUX, AAPL, MSFT, or GOOGL.`
