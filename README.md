@@ -4,14 +4,16 @@ A web application that analyzes word frequency trends across historical earnings
 
 ## Overview
 
-This tool helps traders make informed decisions on PolyMarket prediction markets by analyzing how frequently specific words appear in a company's earnings call transcripts over the last 8 quarters.
+This tool helps traders make informed decisions on PolyMarket prediction markets by analyzing how frequently specific words appear in a company's earnings call transcripts.
+
+> **⚠️ FREE Tier Mode:** Currently using API Ninjas FREE tier which only provides the **most recent earnings call** per company. Some tickers (like SNOW, COIN) may be unavailable.
 
 ## Features
 
 - **Real Data Integration**: ✅ Connected to API Ninjas for real earnings transcripts
 - **Company Analysis**: Supports any publicly traded company (SBUX, AAPL, MSFT, etc.)
 - **Word Tracking**: Track multiple words simultaneously (comma-separated input)
-- **Historical Data**: Analyzes last 8 quarters of earnings transcripts
+- **Transcript Data**: Analyzes the most recent earnings transcript (FREE tier)
 - **Visualizations**:
   - Interactive table with quarterly breakdown
   - Line chart showing trends over time
@@ -142,21 +144,21 @@ The analysis engine:
 - **↓ Decreasing** (Red): >15% decline from first to second half
 - **→ Stable** (Gray): Between -15% and +15% change
 
-## Real Data + Smart Fallbacks
+## Real Data + API Tier Info
 
-✅ **Now using real earnings transcripts from API Ninjas!**
+✅ **Using real earnings transcripts from API Ninjas!**
 
-The app fetches actual earnings call transcripts from:
-- Last 8 quarters of historical data
-- Real dates and actual transcript content
-- Parallel API calls for faster performance
+### FREE Tier Limitations (Current)
+- **Single quarter only**: Returns the most recent earnings call
+- **Some tickers unavailable**: Premium-only tickers (SNOW, COIN, etc.) return errors
+- **3,000 API calls/month**: Sufficient for moderate usage
 
-**Automatic Fallback**: If API limit reached or company unavailable, the backend seamlessly switches to realistic mock data with:
-- 8 quarters of transcripts (Q1 2023 - Q4 2024)
-- Seasonally appropriate content (e.g., "holiday" mentions spike in Q4)
-- Representative word frequencies for testing
+### Premium Tier (Upgrade for more)
+- Access to historical data (last 8 quarters)
+- All tickers available including SNOW, COIN, etc.
+- Year/quarter specific queries
 
-See `API_INTEGRATION.md` for full details on the real data integration.
+See `API_INTEGRATION.md` for full details.
 
 ## Future Enhancements
 
@@ -180,10 +182,9 @@ See `API_INTEGRATION.md` for full details on the real data integration.
 ## Development Notes
 
 - ✅ **Real API integration active** - Fetching live earnings transcripts
-- API Ninjas Developer plan configured and working
+- API Ninjas FREE tier (single quarter per ticker)
 - All transcript data is cached in memory to minimize API calls
 - CSV export works entirely client-side (no server processing)
-- Smart fallback to mock data ensures app always works
 - Detailed logging helps monitor API usage and performance
 
 ## Cost Estimates

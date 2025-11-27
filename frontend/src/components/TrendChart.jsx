@@ -23,6 +23,9 @@ ChartJS.register(
 function TrendChart({ data, focusedWords, showHighConsistency }) {
   if (!data || data.length === 0) return null;
 
+  // Check if we only have single quarter data - show simplified view
+  const isSingleQuarter = data[0]?.quarters?.length === 1;
+
   // Filter data if words are focused (multi-select)
   let displayData = focusedWords && focusedWords.length > 0
     ? data.filter(wordData => focusedWords.includes(wordData.word))
@@ -33,6 +36,67 @@ function TrendChart({ data, focusedWords, showHighConsistency }) {
     displayData = displayData.filter(wordData => parseFloat(wordData.consistencyPercent) >= 75);
   }
 
+  // For single quarter, show a horizontal bar chart of mentions per word
+  if (isSingleQuarter) {
+    const quarterLabel = data[0].quarters[0].quarter;
+    const labels = displayData.map(d => d.word);
+    const counts = displayData.map(d => d.total);
+
+    const chartData = {
+      labels,
+      datasets: [{
+        label: `Mentions in ${quarterLabel}`,
+        data: counts,
+        backgroundColor: counts.map((_, idx) => {
+          const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
+          return colors[idx % colors.length];
+        }),
+        borderRadius: 4,
+        maxBarThickness: 40
+      }]
+    };
+
+    const options = {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        title: {
+          display: true,
+          text: `Keyword Mentions - ${quarterLabel}`,
+          font: { size: 16, weight: 'bold' },
+          padding: { bottom: 20 }
+        },
+        tooltip: {
+          callbacks: {
+            label: (context) => `${context.parsed.x} mentions`
+          }
+        }
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          ticks: { precision: 0 },
+          title: { display: true, text: 'Mention Count' }
+        },
+        y: {
+          title: { display: true, text: 'Keyword' }
+        }
+      }
+    };
+
+    return (
+      <div className="trend-chart-container">
+        <h3>📊 Mention Summary</h3>
+        <div className="chart-wrapper" style={{ height: Math.max(200, displayData.length * 50) }}>
+          <Bar data={chartData} options={options} />
+        </div>
+      </div>
+    );
+  }
+
+  // Multi-quarter view (original)
   // Prepare data for Chart.js
   const labels = data[0].quarters.map(q => q.quarter);
 

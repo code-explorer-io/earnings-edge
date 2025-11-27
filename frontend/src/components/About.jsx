@@ -15,10 +15,21 @@ function About({ onTabChange }) {
           <div className="section-icon">🎯</div>
           <h3>What is EarningsEdge?</h3>
           <p>
-            EarningsEdge is a historical data analysis tool for earnings call transcripts. We track
-            keyword mention patterns across the last 8 quarters of earnings calls, providing factual
+            EarningsEdge is a data analysis tool for earnings call transcripts. We track
+            keyword mention patterns in earnings calls, providing factual
             frequency data that traders can use to inform their own PolyMarket predictions.
           </p>
+          <div className="free-tier-info" style={{
+            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%)',
+            border: '1px solid rgba(59, 130, 246, 0.3)',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            marginTop: '12px',
+            fontSize: '0.9rem'
+          }}>
+            <strong style={{ color: '#3b82f6' }}>ℹ️ FREE Tier:</strong>{' '}
+            <span>Currently analyzing the <strong>most recent earnings call only</strong>. Some tickers may be unavailable.</span>
+          </div>
         </div>
 
         <div className="about-section">
@@ -43,14 +54,14 @@ function About({ onTabChange }) {
               <div className="step-number">3</div>
               <div className="step-content">
                 <h4>Analyze Data</h4>
-                <p>Get insights from the last 8 quarters of earnings call transcripts</p>
+                <p>Get insights from the most recent earnings call transcript</p>
               </div>
             </div>
             <div className="step">
               <div className="step-number">4</div>
               <div className="step-content">
-                <h4>Review Historical Patterns</h4>
-                <p>Use consistency scores and frequency data to inform your trading decisions</p>
+                <h4>Review Mention Data</h4>
+                <p>Use frequency data to inform your trading decisions</p>
               </div>
             </div>
           </div>
@@ -84,7 +95,7 @@ function About({ onTabChange }) {
           <div className="features-grid">
             <div className="feature">
               <h4>📈 Frequency Analysis</h4>
-              <p>Track how often specific words appear across multiple quarters</p>
+              <p>Track how often specific words appear in earnings calls</p>
             </div>
             <div className="feature">
               <h4>🚦 Traffic Light System</h4>
@@ -106,26 +117,25 @@ function About({ onTabChange }) {
           <h3>Understanding the Metrics</h3>
           <div className="metrics-explanation">
             <div className="metric-card">
-              <h4>Consistency Score</h4>
+              <h4>Mention Count</h4>
               <p>
-                The percentage of quarters (out of the last 8) where the word was mentioned at least
-                once. Higher scores indicate more reliable patterns.
+                The number of times a keyword appears in the earnings call transcript.
+                Higher counts indicate the topic was discussed more frequently.
               </p>
               <div className="metric-example">
-                <strong>Example:</strong> 7 out of 8 quarters = 87.5% consistency
+                <strong>Example:</strong> "AI" mentioned 15 times in Q4 2025 call
               </div>
             </div>
 
             <div className="metric-card">
               <h4>Traffic Light Indicators</h4>
-              <p>Visual indicators showing historical mention consistency:</p>
+              <p>Visual indicators showing mention status (available with multi-quarter data):</p>
               <ul>
-                <li><span className="badge green">GREEN</span> ≥80% - Mentioned in 80%+ of quarters</li>
-                <li><span className="badge amber">AMBER</span> 50-79% - Mentioned in 50-79% of quarters</li>
-                <li><span className="badge red">RED</span> &lt;50% - Mentioned in less than 50% of quarters</li>
+                <li><span className="badge green">GREEN</span> - Word was mentioned in the call</li>
+                <li><span className="badge red">RED</span> - Word was not mentioned</li>
               </ul>
               <div className="metric-example">
-                <strong>Note:</strong> These are historical patterns only. Past frequency does not predict future mentions.
+                <strong>Note:</strong> Past mentions do not predict future mentions.
               </div>
             </div>
           </div>
@@ -171,7 +181,7 @@ function About({ onTabChange }) {
 
       <div className="about-footer">
         <p>
-          Built with data from API Ninjas • Analyze the last 8 quarters of earnings transcripts
+          Built with data from API Ninjas • Analyze the most recent earnings transcripts
         </p>
         <p className="disclaimer-footer">
           Not financial advice • Data for informational purposes only
