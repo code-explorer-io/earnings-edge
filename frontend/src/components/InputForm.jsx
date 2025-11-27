@@ -360,7 +360,7 @@ function InputForm({ onAnalyze, loading, onResetRef }) {
         <span className="form-icon">ℹ️</span>
         <h3>FREE TIER MODE</h3>
       </div>
-      <div className="help-text" style={{ marginBottom: '2rem', marginTop: '-1rem' }}>
+      <div style={{ marginBottom: '2rem', marginTop: '-1rem', color: 'white', fontSize: '0.95rem', fontWeight: '500' }}>
         Currently analyzing the <strong>most recent quarter only</strong>.
         Some tickers (like SNOW, COIN) may be unavailable.
       </div>
