@@ -355,24 +355,14 @@ function InputForm({ onAnalyze, loading, onResetRef }) {
 
   return (
     <div className="input-form-container">
-      {/* FREE Tier Notice */}
-      <div className="free-tier-notice" style={{
-        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(147, 51, 234, 0.15) 100%)',
-        border: '2px solid rgba(59, 130, 246, 0.4)',
-        borderRadius: '12px',
-        padding: '20px 24px',
-        marginBottom: '20px',
-        textAlign: 'center'
-      }}>
-        <div style={{ fontSize: '2rem', marginBottom: '8px' }}>ℹ️</div>
-        <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#3b82f6', marginBottom: '6px' }}>
-          FREE Tier Mode
-        </div>
-        <div style={{ fontSize: '1rem', color: '#1e293b', lineHeight: '1.5' }}>
-          Currently analyzing the <strong>most recent quarter only</strong>.
-          <br />
-          Some tickers (like SNOW, COIN) may be unavailable.
-        </div>
+      {/* FREE Tier Notice - styled like form-header */}
+      <div className="form-header" style={{ marginBottom: '1.5rem' }}>
+        <span className="form-icon">ℹ️</span>
+        <h3>FREE TIER MODE</h3>
+      </div>
+      <div className="help-text" style={{ marginBottom: '2rem', marginTop: '-1rem' }}>
+        Currently analyzing the <strong>most recent quarter only</strong>.
+        Some tickers (like SNOW, COIN) may be unavailable.
       </div>
 
       {viewMode === 'input' ? (
