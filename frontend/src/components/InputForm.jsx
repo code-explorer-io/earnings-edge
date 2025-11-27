@@ -355,6 +355,27 @@ function InputForm({ onAnalyze, loading, onResetRef }) {
 
   return (
     <div className="input-form-container">
+      {/* FREE Tier Notice */}
+      <div className="free-tier-notice" style={{
+        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%)',
+        border: '1px solid rgba(59, 130, 246, 0.3)',
+        borderRadius: '8px',
+        padding: '12px 16px',
+        marginBottom: '16px',
+        fontSize: '0.9rem'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+          <span style={{ fontSize: '1.2rem' }}>ℹ️</span>
+          <div>
+            <strong style={{ color: '#3b82f6' }}>FREE Tier Mode:</strong>{' '}
+            <span style={{ color: '#6b7280' }}>
+              Currently analyzing the <strong>most recent quarter only</strong>.
+              Some tickers (like SNOW, COIN) may be unavailable.
+            </span>
+          </div>
+        </div>
+      </div>
+
       {viewMode === 'input' ? (
         // INPUT MODE
         <div className="input-mode">

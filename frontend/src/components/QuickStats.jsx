@@ -143,48 +143,67 @@ function QuickStats({ data, focusedWords, showHighConsistency, onWordClick, poly
               textAlign: 'center'
             }}>
               <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: getTrafficLightColor(wordData.trafficLight) }}>
-                {wordData.riskLevel}
+                {wordData.totalQuarters > 1 ? wordData.riskLevel : (wordData.total > 0 ? 'Mentioned' : 'Not Mentioned')}
               </div>
               <div style={{ fontSize: '1.05rem', marginTop: '4px' }}>
-                Mentioned in <strong>{wordData.quartersMentioned} out of {wordData.totalQuarters}</strong> quarters
+                {wordData.totalQuarters > 1 ? (
+                  <>Mentioned in <strong>{wordData.quartersMentioned} out of {wordData.totalQuarters}</strong> quarters</>
+                ) : (
+                  <><strong>{wordData.total}</strong> {wordData.total === 1 ? 'mention' : 'mentions'} in latest earnings call</>
+                )}
               </div>
-              <div style={{ fontSize: '1.05rem', color: '#6b7280', marginTop: '2px', fontWeight: '600' }}>
-                ({wordData.consistencyPercent}% consistency)
-              </div>
+              {wordData.totalQuarters > 1 && (
+                <div style={{ fontSize: '1.05rem', color: '#6b7280', marginTop: '2px', fontWeight: '600' }}>
+                  ({wordData.consistencyPercent}% consistency)
+                </div>
+              )}
             </div>
 
             {/* Mention Pattern */}
-            <div className="recommendation-box" style={{
-              backgroundColor: '#3b82f615',
-              border: '2px solid #3b82f6',
-              borderRadius: '8px',
-              padding: '12px',
-              marginBottom: '12px',
-              textAlign: 'center'
-            }}>
-              <div style={{
-                fontSize: '1.3rem',
-                fontWeight: 'bold',
-                color: '#3b82f6'
+            {wordData.totalQuarters > 1 && (
+              <div className="recommendation-box" style={{
+                backgroundColor: '#3b82f615',
+                border: '2px solid #3b82f6',
+                borderRadius: '8px',
+                padding: '12px',
+                marginBottom: '12px',
+                textAlign: 'center'
               }}>
-                📊 Frequency: {wordData.quartersMentioned}/{wordData.totalQuarters} Quarters
+                <div style={{
+                  fontSize: '1.3rem',
+                  fontWeight: 'bold',
+                  color: '#3b82f6'
+                }}>
+                  📊 Frequency: {wordData.quartersMentioned}/{wordData.totalQuarters} Quarters
+                </div>
+                <div style={{ fontSize: '1rem', color: '#6b7280', marginTop: '6px', fontStyle: 'italic' }}>
+                  {wordData.consistencyPercent}% consistency across historical earnings calls
+                </div>
               </div>
-              <div style={{ fontSize: '1rem', color: '#6b7280', marginTop: '6px', fontStyle: 'italic' }}>
-                {wordData.consistencyPercent}% consistency across historical earnings calls
-              </div>
-            </div>
+            )}
 
             <div className="stat-details">
-              <div className="stat-item">
-                <span className="stat-label">📊 Last 4 Q Avg:</span>
-                <span className="stat-value" style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
-                  {wordData.last4Avg} mentions
-                </span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-label">📈 Recent Rate (L4Q):</span>
-                <span className="stat-value">{wordData.mentionRate}% of quarters</span>
-              </div>
+              {wordData.totalQuarters > 1 ? (
+                <>
+                  <div className="stat-item">
+                    <span className="stat-label">📊 Last 4 Q Avg:</span>
+                    <span className="stat-value" style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
+                      {wordData.last4Avg} mentions
+                    </span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">📈 Recent Rate (L4Q):</span>
+                    <span className="stat-value">{wordData.mentionRate}% of quarters</span>
+                  </div>
+                </>
+              ) : (
+                <div className="stat-item">
+                  <span className="stat-label">📊 Mentions:</span>
+                  <span className="stat-value" style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
+                    {wordData.total} in latest call
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* PolyMarket Comparison */}

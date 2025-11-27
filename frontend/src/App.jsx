@@ -113,6 +113,10 @@ function App() {
 
       if (!transcriptResponse.ok) {
         const errorData = await transcriptResponse.json();
+        // Check for premium-only ticker error
+        if (errorData.isPremium || transcriptResponse.status === 403) {
+          throw new Error(`⚠️ ${ticker} requires a premium API subscription. Try popular tickers like AAPL, MSFT, GOOGL, AMZN, SBUX, or COST.`);
+        }
         throw new Error(errorData.message || `Failed to fetch transcripts for ${ticker}`);
       }
 
@@ -430,8 +434,9 @@ function App() {
               </div>
             )}
 
-            {/* High Consistency Filter */}
-            {analysisResults.analyzedWords.length > 1 && (() => {
+            {/* High Consistency Filter - only show when we have multiple quarters */}
+            {analysisResults.analyzedWords.length > 1 &&
+             analysisResults.analyzedWords[0]?.quarters?.length > 1 && (() => {
               const highConsistencyWords = analysisResults.analyzedWords.filter(
                 wordData => parseFloat(wordData.consistencyPercent) >= 75
               );
@@ -472,7 +477,7 @@ function App() {
                       fontSize: '0.9rem',
                       fontWeight: '500'
                     }}>
-                      {count} reliable {count === 1 ? 'word' : 'words'} found (6+ out of 8 quarters)
+                      {count} reliable {count === 1 ? 'word' : 'words'} found
                     </span>
                   </div>
                 </div>
@@ -526,7 +531,7 @@ function App() {
             ⚡ EarningsEdge
           </div>
           <div style={{ textAlign: 'right' }}>
-            <p style={{ margin: 0 }}>Built for PolyMarket traders • Data from last 8 quarters</p>
+            <p style={{ margin: 0 }}>Built for PolyMarket traders • Most recent earnings call</p>
             <p style={{
               fontSize: '0.9rem',
               color: darkMode ? '#fbbf24' : '#d97706',

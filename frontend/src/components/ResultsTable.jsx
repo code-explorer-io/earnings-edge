@@ -55,22 +55,29 @@ function ResultsTable({ data, focusedWords, showHighConsistency, ticker }) {
     setSelectedKeyword(null);
   };
 
+  const isSingleQuarter = quarters.length === 1;
+
   return (
     <div className="results-table-container">
-      <h3>📋 Enhanced Quarterly Breakdown</h3>
-      <p className="table-subtitle">Raw mention counts per quarter</p>
+      <h3>📋 {isSingleQuarter ? 'Earnings Call Analysis' : 'Enhanced Quarterly Breakdown'}</h3>
+      <p className="table-subtitle">
+        {isSingleQuarter
+          ? `Mention counts from ${quarters[0].quarter} earnings call`
+          : 'Raw mention counts per quarter'
+        }
+      </p>
       <div className="table-wrapper">
         <table className="results-table">
           <thead>
             <tr>
               <th className="word-column">Word</th>
-              <th className="traffic-light-column" title="Traffic Light Risk Assessment">🚦</th>
+              {!isSingleQuarter && <th className="traffic-light-column" title="Traffic Light Risk Assessment">🚦</th>}
               {quarters.map((quarter, idx) => (
-                <th key={idx} className="quarter-column">{quarter.quarter}</th>
+                <th key={idx} className="quarter-column">{isSingleQuarter ? 'Mentions' : quarter.quarter}</th>
               ))}
-              <th className="total-column">Total</th>
-              <th className="consistency-column" title="Percentage of quarters mentioned">Consistency</th>
-              <th className="quarters-mentioned-column" title="Number of quarters with mentions">Qtrs Mentioned</th>
+              {!isSingleQuarter && <th className="total-column">Total</th>}
+              {!isSingleQuarter && <th className="consistency-column" title="Percentage of quarters mentioned">Consistency</th>}
+              {!isSingleQuarter && <th className="quarters-mentioned-column" title="Number of quarters with mentions">Qtrs Mentioned</th>}
             </tr>
           </thead>
           <tbody>
@@ -109,9 +116,11 @@ function ResultsTable({ data, focusedWords, showHighConsistency, ticker }) {
                     />
                   </div>
                 </td>
-                <td className="traffic-light-cell" title={`${wordData.riskLevel}: ${wordData.consistencyPercent}%`}>
-                  <span style={{ fontSize: '2.25rem' }}>{getTrafficLightEmoji(wordData.trafficLight)}</span>
-                </td>
+                {!isSingleQuarter && (
+                  <td className="traffic-light-cell" title={`${wordData.riskLevel}: ${wordData.consistencyPercent}%`}>
+                    <span style={{ fontSize: '2.25rem' }}>{getTrafficLightEmoji(wordData.trafficLight)}</span>
+                  </td>
+                )}
                 {wordData.quarters.map((quarter, qIdx) => (
                   <td
                     key={qIdx}
@@ -124,13 +133,17 @@ function ResultsTable({ data, focusedWords, showHighConsistency, ticker }) {
                     {quarter.count}
                   </td>
                 ))}
-                <td className="total-cell">{wordData.total}</td>
-                <td className="consistency-cell">
-                  <strong>{wordData.consistencyPercent}%</strong>
-                </td>
-                <td className="quarters-mentioned-cell">
-                  {wordData.quartersMentioned}/{wordData.totalQuarters}
-                </td>
+                {!isSingleQuarter && <td className="total-cell">{wordData.total}</td>}
+                {!isSingleQuarter && (
+                  <td className="consistency-cell">
+                    <strong>{wordData.consistencyPercent}%</strong>
+                  </td>
+                )}
+                {!isSingleQuarter && (
+                  <td className="quarters-mentioned-cell">
+                    {wordData.quartersMentioned}/{wordData.totalQuarters}
+                  </td>
+                )}
               </tr>
               );
             })}
