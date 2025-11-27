@@ -368,7 +368,7 @@ function InputForm({ onAnalyze, loading, onResetRef }) {
         <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#3b82f6', marginBottom: '6px' }}>
           FREE Tier Mode
         </div>
-        <div style={{ fontSize: '1rem', color: '#4b5563', lineHeight: '1.5' }}>
+        <div style={{ fontSize: '1rem', color: '#1e293b', lineHeight: '1.5' }}>
           Currently analyzing the <strong>most recent quarter only</strong>.
           <br />
           Some tickers (like SNOW, COIN) may be unavailable.
