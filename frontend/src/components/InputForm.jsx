@@ -357,22 +357,21 @@ function InputForm({ onAnalyze, loading, onResetRef }) {
     <div className="input-form-container">
       {/* FREE Tier Notice */}
       <div className="free-tier-notice" style={{
-        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%)',
-        border: '1px solid rgba(59, 130, 246, 0.3)',
-        borderRadius: '8px',
-        padding: '12px 16px',
-        marginBottom: '16px',
-        fontSize: '0.9rem'
+        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(147, 51, 234, 0.15) 100%)',
+        border: '2px solid rgba(59, 130, 246, 0.4)',
+        borderRadius: '12px',
+        padding: '20px 24px',
+        marginBottom: '20px',
+        textAlign: 'center'
       }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-          <span style={{ fontSize: '1.2rem' }}>ℹ️</span>
-          <div>
-            <strong style={{ color: '#3b82f6' }}>FREE Tier Mode:</strong>{' '}
-            <span style={{ color: '#6b7280' }}>
-              Currently analyzing the <strong>most recent quarter only</strong>.
-              Some tickers (like SNOW, COIN) may be unavailable.
-            </span>
-          </div>
+        <div style={{ fontSize: '2rem', marginBottom: '8px' }}>ℹ️</div>
+        <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#3b82f6', marginBottom: '6px' }}>
+          FREE Tier Mode
+        </div>
+        <div style={{ fontSize: '1rem', color: '#4b5563', lineHeight: '1.5' }}>
+          Currently analyzing the <strong>most recent quarter only</strong>.
+          <br />
+          Some tickers (like SNOW, COIN) may be unavailable.
         </div>
       </div>
 
