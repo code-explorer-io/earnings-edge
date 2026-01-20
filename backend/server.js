@@ -66,12 +66,14 @@ const allowedOrigins = [
   'https://www.earningsedge.io' // Production domain with www
 ];
 
-// CORS configuration with origin validation
+// CORS configuration with STRICT origin validation
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl, Postman)
+    // SECURITY: Reject requests with no origin header
+    // This prevents attackers from bypassing CORS by omitting the Origin header
     if (!origin) {
-      return callback(null, true);
+      console.log('❌ Blocked request: no origin header');
+      return callback(new Error('Origin header required'), false);
     }
 
     if (allowedOrigins.indexOf(origin) !== -1) {
@@ -149,31 +151,6 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
 });
 
-// Admin endpoint to clear cache (useful for forcing fresh data)
-app.post('/api/admin/clear-cache', (req, res) => {
-  const { ticker } = req.body;
-
-  if (ticker) {
-    const cacheKey = ticker.toUpperCase();
-    const deleted = transcriptCache.delete(cacheKey);
-    console.log(`🗑️  Manual cache clear requested for ${cacheKey}: ${deleted ? 'SUCCESS' : 'NOT FOUND'}`);
-    res.json({
-      success: deleted,
-      message: deleted
-        ? `Cache cleared for ${cacheKey}. Next request will fetch fresh data.`
-        : `No cache found for ${cacheKey}.`
-    });
-  } else {
-    const cacheSize = transcriptCache.size;
-    transcriptCache.clear();
-    console.log(`🗑️  Manual cache clear requested: Cleared ALL ${cacheSize} entries`);
-    res.json({
-      success: true,
-      message: `Cleared all cache (${cacheSize} entries). Next requests will fetch fresh data.`
-    });
-  }
-});
-
 // Get earnings transcripts for a company
 app.get('/api/transcripts/:ticker', async (req, res) => {
   try {
@@ -192,8 +169,8 @@ app.get('/api/transcripts/:ticker', async (req, res) => {
     if (!apiKey || apiKey === 'your_api_key_here') {
       console.error('❌ API key not configured');
       return res.status(500).json({
-        error: 'API key not configured',
-        message: 'Please configure API_NINJA_KEY in backend/.env file'
+        error: 'Configuration error',
+        message: 'Server is not properly configured. Please contact support.'
       });
     }
 
@@ -543,8 +520,8 @@ app.get('/api/context/:ticker/:keyword', async (req, res) => {
       const apiKey = process.env.API_NINJA_KEY;
       if (!apiKey || apiKey === 'your_api_key_here') {
         return res.status(500).json({
-          error: 'API key not configured',
-          message: 'Please configure API_NINJA_KEY in backend/.env file'
+          error: 'Configuration error',
+          message: 'Server is not properly configured. Please contact support.'
         });
       }
 

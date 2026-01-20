@@ -37,14 +37,16 @@ export function applySecurityHeaders(res, origin) {
 }
 
 /**
- * Validate CORS origin
+ * Validate CORS origin - STRICT MODE
+ * Rejects requests without Origin header to prevent CORS bypass attacks
  */
 export function validateOrigin(req) {
   const origin = req.headers.origin;
 
-  // Allow requests with no origin (direct API calls, curl, etc.)
+  // SECURITY: Reject requests with no origin header
+  // This prevents attackers from bypassing CORS by omitting the Origin header
   if (!origin) {
-    return true;
+    return false;
   }
 
   // Check if origin is in whitelist
@@ -137,9 +139,9 @@ export function applySecurityMiddleware(req, res) {
     return { blocked: true };
   }
 
-  // Validate origin (only for requests with origin header)
-  if (origin && !validateOrigin(req)) {
-    console.log(`❌ Blocked origin: ${origin}`);
+  // Validate origin - STRICT MODE (rejects requests without origin)
+  if (!validateOrigin(req)) {
+    console.log(`❌ Blocked request: origin=${origin || 'none'}`);
     return {
       blocked: true,
       response: res.status(403).json({
