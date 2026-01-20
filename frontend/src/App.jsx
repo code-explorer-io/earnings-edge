@@ -113,11 +113,7 @@ function App() {
 
       if (!transcriptResponse.ok) {
         const errorData = await transcriptResponse.json();
-        // Check for premium-only ticker error
-        if (errorData.isPremium || transcriptResponse.status === 403) {
-          throw new Error(`⚠️ ${ticker} requires a premium API subscription. Try popular tickers like AAPL, MSFT, GOOGL, AMZN, SBUX, or COST.`);
-        }
-        throw new Error(errorData.message || `Failed to fetch transcripts for ${ticker}`);
+        throw new Error(errorData.message || `Failed to fetch transcripts for ${ticker}. Try a major company like AAPL, MSFT, or AMZN.`);
       }
 
       const transcriptData = await transcriptResponse.json();

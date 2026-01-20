@@ -30,15 +30,29 @@ async function fetchTranscriptList(ticker, apiKey) {
   console.log(`📡 Fetching transcript list for ${ticker} from Finnhub...`);
 
   const response = await fetch(url);
+  const responseText = await response.text();
+
+  console.log(`📦 Finnhub response status: ${response.status}`);
+  console.log(`📦 Finnhub response body: ${responseText.substring(0, 500)}`);
 
   if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`⚠️  Finnhub API returned ${response.status}: ${errorText}`);
-    throw new Error(`API returned status ${response.status}`);
+    console.error(`⚠️  Finnhub API returned ${response.status}: ${responseText}`);
+    // Parse error message from Finnhub
+    try {
+      const errorData = JSON.parse(responseText);
+      throw new Error(errorData.error || `Finnhub API error: ${response.status}`);
+    } catch {
+      throw new Error(`Finnhub API error: ${response.status}`);
+    }
   }
 
-  const data = await response.json();
-  return data.transcripts || [];
+  try {
+    const data = JSON.parse(responseText);
+    return data.transcripts || [];
+  } catch {
+    console.error(`⚠️  Failed to parse Finnhub response: ${responseText}`);
+    return [];
+  }
 }
 
 // Helper function to fetch a single transcript by ID from Finnhub
