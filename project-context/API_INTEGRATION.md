@@ -1,19 +1,21 @@
-# Finnhub API Integration
+# API Ninjas Integration
 
-## Current Status: FREE Tier Mode
+## Current Status: Requires Premium Subscription
 
-Using the **Finnhub Earnings Call Transcript API** on the FREE tier.
+Using the **API Ninjas Earnings Call Transcript API**.
 
-### FREE Tier Benefits
+**Note:** As of January 2025, the earnings transcript endpoint requires a premium subscription ($59/month Developer tier).
 
-| Feature | FREE Tier |
-|---------|-----------|
-| API calls/minute | 60 |
+### Premium Tier Features
+
+| Feature | Developer Tier |
+|---------|----------------|
+| Cost | $59/month |
+| API calls/month | 100,000 |
+| Commercial use | Yes |
 | Transcripts access | Yes |
-| Historical data | Back to 2001 |
-| Coverage | US, UK, EU, AU, CA |
 
-### Working Tickers (FREE Tier)
+### Supported Tickers (with Premium)
 - AAPL - Apple
 - MSFT - Microsoft
 - GOOGL - Google
@@ -21,7 +23,7 @@ Using the **Finnhub Earnings Call Transcript API** on the FREE tier.
 - TSLA - Tesla
 - META - Meta
 - NVDA - Nvidia
-- And many more major companies
+- And 8,000+ more companies
 
 ## How It Works
 
@@ -32,9 +34,7 @@ User searches for AAPL
     ↓
 Backend checks cache
     ↓ (if not cached)
-Finnhub fetches transcript list
-    ↓
-Fetch most recent transcript by ID
+API Ninjas fetches transcript
     ↓
 Response cached (30 min TTL)
     ↓
@@ -43,33 +43,28 @@ Transcript sent to frontend
 Analysis runs on that quarter
 ```
 
-### API Endpoints
+### API Endpoint
 
-**List Transcripts:**
 ```
-GET https://finnhub.io/api/v1/stock/transcripts/list?symbol=AAPL&token=YOUR_KEY
-```
-
-**Get Transcript:**
-```
-GET https://finnhub.io/api/v1/stock/transcripts?id=TRANSCRIPT_ID&token=YOUR_KEY
+GET https://api.api-ninjas.com/v1/earningstranscript?ticker=AAPL
+Headers: X-Api-Key: YOUR_KEY
 ```
 
 ## Configuration
 
 ### Environment Variables
 
-**Backend** (`backend/.env`):
-```
-API_FINHUB_KEY=your_finnhub_key_here
-```
-
 **Vercel** (production):
-- Set `API_FINHUB_KEY` in Project Settings → Environment Variables
+- Set `API_NINJA_KEY` in Project Settings → Environment Variables
+
+**Backend** (`backend/.env`) for local development:
+```
+API_NINJA_KEY=your_api_ninjas_key_here
+```
 
 ### API Security
 
-- Key stored only in `.env` (excluded from git)
+- Key stored only in environment variables (excluded from git)
 - Never exposed to frontend
 - Only accessible to backend server
 
@@ -81,6 +76,15 @@ API_FINHUB_KEY=your_finnhub_key_here
 
 ## Error Handling
 
+### Premium Required Error
+```json
+{
+  "error": "Premium ticker",
+  "message": "AAPL transcripts require a premium API Ninjas subscription...",
+  "isPremium": true
+}
+```
+
 ### No Transcript Error
 ```json
 {
@@ -89,25 +93,14 @@ API_FINHUB_KEY=your_finnhub_key_here
 }
 ```
 
-### Rate Limit Error
-```json
-{
-  "error": "Too many requests",
-  "message": "API rate limit reached. Please try again in a moment."
-}
-```
+## Upgrading to Premium
 
-## Monitoring
-
-Watch backend logs:
-```
-📡 = Fetching from API
-✅ = Successfully fetched
-⚠️  = API warning
-❌ = Failed request
-```
+1. Go to https://api-ninjas.com/pricing
+2. Subscribe to Developer tier ($59/month)
+3. Your existing API key will be upgraded
+4. Transcripts will start working immediately
 
 ---
 
 *Last updated: January 2026*
-*Status: Finnhub FREE Tier Active*
+*Status: Premium subscription required for transcript access*

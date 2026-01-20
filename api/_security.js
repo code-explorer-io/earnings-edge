@@ -102,10 +102,10 @@ export function checkRateLimit(req) {
  * Validate environment variables
  */
 export function validateEnvironment() {
-  if (!process.env.API_FINHUB_KEY || process.env.API_FINHUB_KEY === 'your_api_key_here') {
+  if (!process.env.API_NINJA_KEY || process.env.API_NINJA_KEY === 'your_api_key_here') {
     return {
       valid: false,
-      error: 'API_FINHUB_KEY not configured in Vercel environment variables'
+      error: 'API_NINJA_KEY not configured in Vercel environment variables'
     };
   }
   return { valid: true };
