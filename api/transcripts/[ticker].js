@@ -96,10 +96,11 @@ export default async function handler(req, res) {
   // Validate environment variables
   const envCheck = validateEnvironment();
   if (!envCheck.valid) {
-    console.error('❌ API key not configured');
+    // Log detailed error server-side, return generic message to client
+    console.error('Environment validation failed:', envCheck.error);
     return res.status(500).json({
       error: 'Configuration error',
-      message: envCheck.error
+      message: 'Server is not properly configured. Please contact support.'
     });
   }
 
