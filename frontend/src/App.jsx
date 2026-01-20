@@ -267,7 +267,7 @@ function App() {
 
       {/* Toast Notifications */}
       <Toast
-        visible={toast.visible}
+        isVisible={toast.visible}
         message={toast.message}
         type={toast.type}
         duration={toast.duration}
