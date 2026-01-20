@@ -16,12 +16,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Validate required environment variables
-if (!process.env.API_NINJA_KEY || process.env.API_NINJA_KEY === 'your_api_key_here') {
-  console.error('❌ ERROR: API_NINJA_KEY not found in environment variables');
-  console.error('Please create a .env file with API_NINJA_KEY=your_key_here');
+if (!process.env.API_FINHUB_KEY || process.env.API_FINHUB_KEY === 'your_api_key_here') {
+  console.error('❌ ERROR: API_FINHUB_KEY not found in environment variables');
+  console.error('Please create a .env file with API_FINHUB_KEY=your_key_here');
   process.exit(1);
 }
-console.log('✅ API key loaded successfully');
+console.log('✅ Finnhub API key loaded successfully');
 
 // Initialize OpenAI (optional - only if API key is provided)
 let openai = null;
@@ -163,8 +163,8 @@ app.get('/api/transcripts/:ticker', async (req, res) => {
       return res.json(cachedResult);
     }
 
-    // API Ninja endpoint for earnings transcripts
-    const apiKey = process.env.API_NINJA_KEY;
+    // Finnhub API key
+    const apiKey = process.env.API_FINHUB_KEY;
 
     if (!apiKey || apiKey === 'your_api_key_here') {
       console.error('❌ API key not configured');
@@ -174,24 +174,15 @@ app.get('/api/transcripts/:ticker', async (req, res) => {
       });
     }
 
-    // Fetch latest transcript from API Ninjas (FREE tier limitation)
+    // Fetch latest transcript from Finnhub
     const { transcripts, error } = await fetchLatestTranscript(cacheKey, apiKey);
 
     if (transcripts.length === 0) {
       console.error(`❌ No transcripts found for ${cacheKey}: ${error}`);
 
-      // Check if it's a premium-only ticker
-      if (error && error.includes('premium')) {
-        return res.status(403).json({
-          error: 'Premium ticker',
-          message: `${cacheKey} transcripts require a premium API Ninjas subscription. Try popular tickers like AAPL, MSFT, GOOGL, AMZN, SBUX, or COST.`,
-          isPremium: true
-        });
-      }
-
       return res.status(404).json({
         error: 'No transcripts found',
-        message: `No earnings call transcripts available for ticker ${cacheKey}. Try a major company like SBUX, AAPL, MSFT, or GOOGL.`
+        message: `No earnings call transcripts available for ticker ${cacheKey}. Try a major company like AAPL, MSFT, GOOGL, or AMZN.`
       });
     }
 
@@ -216,68 +207,99 @@ app.get('/api/transcripts/:ticker', async (req, res) => {
 
     res.status(statusCode).json({
       error: 'Failed to fetch transcripts',
-      message: `API Error: ${errorMessage}. Please check your API key and try again.`,
+      message: `API Error: ${errorMessage}. Please try again later.`,
       details: error.message
     });
   }
 });
 
-// Helper function to fetch the latest transcript from API Ninjas (FREE tier)
-// FREE tier only allows fetching the most recent transcript (no year/quarter params)
+// Helper function to fetch transcript list from Finnhub
+async function fetchTranscriptList(ticker, apiKey) {
+  const url = `https://finnhub.io/api/v1/stock/transcripts/list?symbol=${ticker}&token=${apiKey}`;
+
+  console.log(`📡 Fetching transcript list for ${ticker} from Finnhub...`);
+
+  const response = await axios.get(url, { timeout: 10000 });
+
+  if (response.status !== 200) {
+    throw new Error(`API returned status ${response.status}`);
+  }
+
+  return response.data.transcripts || [];
+}
+
+// Helper function to fetch a single transcript by ID from Finnhub
+async function fetchTranscriptById(transcriptId, apiKey) {
+  const url = `https://finnhub.io/api/v1/stock/transcripts?id=${transcriptId}&token=${apiKey}`;
+
+  console.log(`📡 Fetching transcript ${transcriptId} from Finnhub...`);
+
+  const response = await axios.get(url, { timeout: 10000 });
+
+  if (response.status !== 200) {
+    return null;
+  }
+
+  return response.data;
+}
+
+// Helper function to fetch the latest transcript from Finnhub
 async function fetchLatestTranscript(ticker, apiKey) {
   try {
-    // FREE tier: no year/quarter params - returns only the latest transcript
-    const apiUrl = `https://api.api-ninjas.com/v1/earningstranscript`;
-
     console.log(`\n${'='.repeat(60)}`);
-    console.log(`📡 Fetching latest transcript for ${ticker} (FREE tier - single quarter only)`);
+    console.log(`📡 Fetching latest transcript for ${ticker} from Finnhub`);
     console.log(`${'='.repeat(60)}`);
 
     const requestStartTime = Date.now();
-    const response = await axios.get(apiUrl, {
-      headers: { 'X-Api-Key': apiKey },
-      params: { ticker },
-      timeout: 10000,
-      validateStatus: () => true // Accept all status codes
-    });
+
+    // Step 1: Get list of available transcripts
+    const transcriptList = await fetchTranscriptList(ticker, apiKey);
+
+    if (!transcriptList || transcriptList.length === 0) {
+      console.log(`⚠️  No transcripts available for ${ticker}`);
+      return { transcripts: [], error: 'No transcripts available for this ticker' };
+    }
+
+    console.log(`📊 Found ${transcriptList.length} transcripts for ${ticker}`);
+
+    // Step 2: Get the most recent transcript (first in list)
+    const latestTranscriptInfo = transcriptList[0];
+    const transcriptData = await fetchTranscriptById(latestTranscriptInfo.id, apiKey);
+
     const requestDuration = Date.now() - requestStartTime;
+    console.log(`📦 Response received (${requestDuration}ms)`);
 
-    console.log(`📦 Response received (${requestDuration}ms) - Status: ${response.status}`);
-
-    // Check for premium-only error
-    if (response.data && response.data.error) {
-      console.log(`⚠️  API error: ${response.data.error}`);
-      return { transcripts: [], error: response.data.error };
+    if (!transcriptData || !transcriptData.transcript) {
+      return { transcripts: [], error: 'Could not fetch transcript content' };
     }
 
-    // Check HTTP status
-    if (response.status !== 200) {
-      console.log(`❌ Non-200 status code: ${response.status}`);
-      return { transcripts: [], error: `API returned status ${response.status}` };
-    }
+    // Step 3: Convert Finnhub format to our format
+    // Finnhub returns transcript as array of speech segments
+    const fullTranscript = transcriptData.transcript
+      .map(segment => {
+        const speaker = segment.name || 'Unknown';
+        const speech = segment.speech || '';
+        return `${speaker}: ${speech}`;
+      })
+      .join('\n\n');
 
-    // API Ninjas returns the transcript data directly
-    if (response.data && response.data.transcript) {
-      const year = parseInt(response.data.year) || new Date().getFullYear();
-      const quarter = parseInt(response.data.quarter) || Math.floor(new Date().getMonth() / 3) + 1;
+    const year = transcriptData.year || latestTranscriptInfo.year || new Date().getFullYear();
+    const quarter = transcriptData.quarter || latestTranscriptInfo.quarter || Math.floor(new Date().getMonth() / 3) + 1;
 
-      console.log(`✅ Found transcript: Q${quarter} ${year} (${response.data.transcript.length} chars)`);
+    console.log(`✅ Found transcript: Q${quarter} ${year} (${fullTranscript.length} chars)`);
 
-      return {
-        transcripts: [{
-          ticker: ticker,
-          quarter: `Q${quarter} ${year}`,
-          year: year,
-          quarterNum: quarter,
-          date: response.data.date || `${quarter * 3}/15/${year}`,
-          transcript: response.data.transcript
-        }],
-        error: null
-      };
-    }
-
-    console.log(`⚠️  No transcript data in response`);
-    return { transcripts: [], error: 'No transcript data returned' };
+    return {
+      transcripts: [{
+        ticker: ticker,
+        quarter: `Q${quarter} ${year}`,
+        year: year,
+        quarterNum: quarter,
+        date: transcriptData.time || latestTranscriptInfo.time || new Date().toISOString(),
+        transcript: fullTranscript,
+        title: transcriptData.title || latestTranscriptInfo.title || `${ticker} Q${quarter} ${year} Earnings Call`
+      }],
+      error: null
+    };
 
   } catch (err) {
     console.error(`❌ Exception fetching transcript for ${ticker}:`, err.message);
@@ -517,7 +539,7 @@ app.get('/api/context/:ticker/:keyword', async (req, res) => {
 
     // If not in cache, fetch transcripts
     if (!transcriptsData) {
-      const apiKey = process.env.API_NINJA_KEY;
+      const apiKey = process.env.API_FINHUB_KEY;
       if (!apiKey || apiKey === 'your_api_key_here') {
         return res.status(500).json({
           error: 'Configuration error',
@@ -525,18 +547,10 @@ app.get('/api/context/:ticker/:keyword', async (req, res) => {
         });
       }
 
-      console.log(`📡 Fetching transcripts for ${cacheKey} from API Ninjas (FREE tier)...`);
+      console.log(`📡 Fetching transcripts for ${cacheKey} from Finnhub...`);
       const { transcripts, error } = await fetchLatestTranscript(cacheKey, apiKey);
 
       if (transcripts.length === 0) {
-        // Check if it's a premium-only ticker
-        if (error && error.includes('premium')) {
-          return res.status(403).json({
-            error: 'Premium ticker',
-            message: `${cacheKey} transcripts require a premium API Ninjas subscription.`,
-            isPremium: true
-          });
-        }
         return res.status(404).json({
           error: 'No transcripts found',
           message: `No earnings call transcripts available for ticker ${cacheKey}.`

@@ -1,67 +1,59 @@
-# API Ninjas Integration
+# Finnhub API Integration
 
 ## Current Status: FREE Tier Mode
 
-Using the **API Ninjas Earnings Call Transcript API** on the FREE tier.
+Using the **Finnhub Earnings Call Transcript API** on the FREE tier.
 
-### FREE Tier Limitations
+### FREE Tier Benefits
 
-| Feature | FREE Tier | Premium Tier |
-|---------|-----------|--------------|
-| Quarters per request | **Latest only** | Last 8 quarters |
-| Year/quarter params | Not available | Available |
-| Ticker availability | Major tickers only | All tickers |
-| API calls/month | 3,000 | Higher limits |
-
-### Premium-Only Tickers (Not Available on FREE)
-- SNOW (Snowflake)
-- COIN (Coinbase)
-- And others...
+| Feature | FREE Tier |
+|---------|-----------|
+| API calls/minute | 60 |
+| Transcripts access | Yes |
+| Historical data | Back to 2001 |
+| Coverage | US, UK, EU, AU, CA |
 
 ### Working Tickers (FREE Tier)
 - AAPL - Apple
 - MSFT - Microsoft
 - GOOGL - Google
 - AMZN - Amazon
-- SBUX - Starbucks
-- COST - Costco
 - TSLA - Tesla
 - META - Meta
-- PLTR - Palantir
+- NVDA - Nvidia
+- And many more major companies
 
 ## How It Works
 
-### API Request Flow (FREE Tier)
+### API Request Flow
 
 ```
 User searches for AAPL
     ↓
 Backend checks cache
     ↓ (if not cached)
-API Ninjas fetches LATEST transcript only
+Finnhub fetches transcript list
+    ↓
+Fetch most recent transcript by ID
     ↓
 Response cached (30 min TTL)
     ↓
-Single transcript sent to frontend
+Transcript sent to frontend
     ↓
 Analysis runs on that quarter
 ```
 
-### API Endpoint
+### API Endpoints
 
-**FREE Tier** (current):
+**List Transcripts:**
 ```
-GET https://api.api-ninjas.com/v1/earningstranscript?ticker=AAPL
+GET https://finnhub.io/api/v1/stock/transcripts/list?symbol=AAPL&token=YOUR_KEY
 ```
-- No year/quarter params (premium only)
-- Returns the most recent earnings call
 
-**Premium Tier** (if upgraded):
+**Get Transcript:**
 ```
-GET https://api.api-ninjas.com/v1/earningstranscript?ticker=AAPL&year=2024&quarter=3
+GET https://finnhub.io/api/v1/stock/transcripts?id=TRANSCRIPT_ID&token=YOUR_KEY
 ```
-- Allows specifying year and quarter
-- Can fetch historical data
 
 ## Configuration
 
@@ -69,11 +61,11 @@ GET https://api.api-ninjas.com/v1/earningstranscript?ticker=AAPL&year=2024&quart
 
 **Backend** (`backend/.env`):
 ```
-API_NINJA_KEY=your_api_key_here
+API_FINHUB_KEY=your_finnhub_key_here
 ```
 
 **Vercel** (production):
-- Set `API_NINJA_KEY` in Project Settings → Environment Variables
+- Set `API_FINHUB_KEY` in Project Settings → Environment Variables
 
 ### API Security
 
@@ -89,15 +81,6 @@ API_NINJA_KEY=your_api_key_here
 
 ## Error Handling
 
-### Premium Ticker Error
-```json
-{
-  "error": "Premium ticker",
-  "message": "SNOW transcripts require a premium API Ninjas subscription...",
-  "isPremium": true
-}
-```
-
 ### No Transcript Error
 ```json
 {
@@ -106,15 +89,13 @@ API_NINJA_KEY=your_api_key_here
 }
 ```
 
-## Upgrading to Premium
-
-To get multi-quarter historical data:
-
-1. Upgrade at [API Ninjas](https://api-ninjas.com)
-2. Update the code to add `year` and `quarter` params back
-3. Restore the `fetchLast8Quarters` function
-
-The code for 8-quarter fetching is in git history if needed.
+### Rate Limit Error
+```json
+{
+  "error": "Too many requests",
+  "message": "API rate limit reached. Please try again in a moment."
+}
+```
 
 ## Monitoring
 
@@ -122,11 +103,11 @@ Watch backend logs:
 ```
 📡 = Fetching from API
 ✅ = Successfully fetched
-⚠️  = API error or premium ticker
+⚠️  = API warning
 ❌ = Failed request
 ```
 
 ---
 
-*Last updated: November 2024*
-*Status: FREE Tier Active*
+*Last updated: January 2026*
+*Status: Finnhub FREE Tier Active*
